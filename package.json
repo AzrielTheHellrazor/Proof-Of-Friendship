@@ -9,9 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.6",
+    "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tanstack/react-query": "^5.83.0",
+    "@wagmi/core": "^2.18.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.11",
+    "lucide-react": "^0.533.0",
+    "next": "15.4.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.4.4"
+    "react-hot-toast": "^2.5.2",
+    "react-intersection-observer": "^9.16.0",
+    "react-use": "^17.6.0",
+    "sonner": "^2.0.6",
+    "tailwind-merge": "^3.3.1",
+    "viem": "^2.33.1",
+    "wagmi": "^2.16.0"
   },
   "devDependencies": {
     "typescript": "^5",

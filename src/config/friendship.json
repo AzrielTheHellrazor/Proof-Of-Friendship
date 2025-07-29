@@ -1,0 +1,24 @@
+{
+  "nft": {
+    "name": "Proof of Friendship",
+    "description": "A special NFT that proves our friendship! 🫂",
+    "image": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=400&fit=crop&crop=center",
+    "attributes": [
+      {
+        "trait_type": "Friendship Level",
+        "value": "Legendary"
+      },
+      {
+        "trait_type": "Visit Date",
+        "value": "Forever"
+      },
+      {
+        "trait_type": "Special Power",
+        "value": "Unlimited Hugs"
+      }
+    ]
+  },
+  "mintLink": "https://mint.fun/example",
+  "welcomeMessage": "Welcome, friend! 🎉",
+  "subtitle": "You tapped the NFC chip, so you're a real friend!"
+} 
