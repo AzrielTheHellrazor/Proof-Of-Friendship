@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, Users, Calendar, Trophy, Star, Shield, Zap, Globe, Heart, Award, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
+import { Wallet, Users, Calendar, Trophy, Star, Heart, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
 import { useAccount, useConnect } from 'wagmi';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -50,44 +50,7 @@ const mockEvents = [
   }
 ];
 
-const features = [
-  {
-    icon: Shield,
-    title: "Blockchain Security",
-    description: "Your memories are permanently secured on the blockchain with advanced cryptographic protection.",
-    color: "bg-blue-500"
-  },
-  {
-    icon: Zap,
-    title: "Instant Minting",
-    description: "Create your NFTs instantly with our optimized smart contract technology.",
-    color: "bg-yellow-500"
-  },
-  {
-    icon: Globe,
-    title: "Global Network",
-    description: "Connect with friends worldwide in our decentralized social ecosystem.",
-    color: "bg-green-500"
-  },
-  {
-    icon: Heart,
-    title: "Friendship Focus",
-    description: "Designed specifically for preserving and celebrating meaningful relationships.",
-    color: "bg-red-500"
-  },
-  {
-    icon: Award,
-    title: "Digital Collectibles",
-    description: "Transform your social moments into valuable digital assets and memories.",
-    color: "bg-purple-500"
-  },
-  {
-    icon: Star,
-    title: "Premium Experience",
-    description: "Enjoy a sophisticated, user-friendly interface designed for modern web3 users.",
-    color: "bg-indigo-500"
-  }
-];
+
 
 export default function Home() {
   const { address, isConnected } = useAccount();
@@ -208,11 +171,11 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8">
+              <Button size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
                 Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8">
+              <Button variant="outline" size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
                 Learn More
               </Button>
             </div>
@@ -279,43 +242,7 @@ export default function Home() {
           </motion.section>
         )}
 
-        {/* Features Section */}
-        <section className="space-y-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Why Choose Proof of Friendship?</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of social connections with cutting-edge blockchain technology
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="h-full hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className={`w-12 h-12 rounded-lg ${feature.color} flex items-center justify-center mb-4`}>
-                        <IconComponent className="h-6 w-6 text-white" />
-                      </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-base leading-relaxed">
-                        {feature.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
 
         {/* Events Section */}
         <section className="space-y-8">
@@ -428,23 +355,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Heart className="h-4 w-4" />
-              </div>
-              <span className="font-semibold">Proof of Friendship</span>
-            </div>
-            <Separator className="w-full max-w-xs" />
-            <p className="text-center text-sm text-muted-foreground">
-              Preserving friendships on the blockchain. Built with ❤️ for the community.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

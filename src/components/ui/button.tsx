@@ -14,13 +14,13 @@ const buttonVariants = cva(
         secondary: "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 hover:from-gray-200 hover:to-gray-300 dark:from-gray-700 dark:to-gray-600 dark:text-gray-100 dark:hover:from-gray-600 dark:hover:to-gray-500",
         ghost: "text-gray-700 hover:bg-purple-50 hover:text-purple-700 dark:text-gray-300 dark:hover:bg-purple-900/20 dark:hover:text-purple-300",
         link: "text-purple-600 underline-offset-4 hover:underline dark:text-purple-400",
-        gradient: "bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 shadow-lg hover:shadow-xl hover:scale-105",
+        gradient: "bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 shadow-lg hover:shadow-xl",
         glass: "glass border-white/20 text-gray-700 hover:bg-white/20 dark:text-gray-300 dark:hover:bg-gray-800/20",
-        modern: "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 shadow-lg hover:shadow-xl hover:scale-105 animate-glow",
+        modern: "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 shadow-lg hover:shadow-xl animate-glow",
         success: "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 shadow-lg hover:shadow-xl",
-        rainbow: "bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 shadow-lg hover:shadow-xl hover:scale-105 animate-pulse-slow",
-        cyan: "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-400 hover:to-blue-400 shadow-lg hover:shadow-xl hover:scale-105",
-        vibrant: "bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white hover:from-purple-500 hover:via-pink-500 hover:to-red-400 shadow-lg hover:shadow-xl hover:scale-105 neon-glow",
+        rainbow: "bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 shadow-lg hover:shadow-xl animate-pulse-slow",
+        cyan: "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-400 hover:to-blue-400 shadow-lg hover:shadow-xl",
+        vibrant: "bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white hover:from-purple-500 hover:via-pink-500 hover:to-red-400 shadow-lg hover:shadow-xl neon-glow",
       },
       size: {
         default: "h-11 px-6 py-2.5",
@@ -45,7 +45,7 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ripple = true, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ripple = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {

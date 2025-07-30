@@ -366,7 +366,7 @@ export default function EventDetail() {
                     <div className="text-center space-y-6">
                       <motion.div 
                         className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto"
-                        animate={{ scale: [1, 1.1, 1] }}
+                        animate={{ scale: [1, 1, 1] }}
                         transition={{ duration: 2, repeat: Infinity }}
                       >
                         <CheckCircle className="w-10 h-10 text-green-600" />

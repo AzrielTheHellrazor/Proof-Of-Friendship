@@ -12,7 +12,7 @@ const cardVariants = cva(
         gradient: "bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-700",
         modern: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-1",
         elevated: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-2xl",
-        interactive: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:-translate-y-1 active:scale-95",
+        interactive: "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg hover:-translate-y-1",
         vibrant: "bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-blue-900/30 border-purple-300 dark:border-purple-600 shadow-lg hover:shadow-xl hover:-translate-y-1",
         rainbow: "bg-gradient-to-br from-purple-100 via-pink-100 to-orange-100 dark:from-purple-900/30 dark:via-pink-900/30 dark:to-orange-900/30 border-purple-300 dark:border-purple-600 shadow-lg hover:shadow-xl hover:-translate-y-1",
         neon: "bg-white dark:bg-gray-800 border-purple-300 dark:border-purple-600 shadow-lg hover:shadow-xl hover:-translate-y-1 neon-glow",

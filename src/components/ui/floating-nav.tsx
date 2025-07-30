@@ -68,8 +68,8 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({ className }) => {
                 ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white neon-glow-pink" 
                 : "text-gray-600 dark:text-gray-300"
             )}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1 }}
+              whileTap={{ scale: 1 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -103,7 +103,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({ className }) => {
               ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white" 
               : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
           )}
-          whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1 }}
         >
           {isConnected ? (
             <>
@@ -123,7 +123,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({ className }) => {
       <motion.div
         className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20"
         animate={{
-          scale: [1, 1.05, 1],
+                          scale: [1, 1, 1],
           opacity: [0.5, 0.8, 0.5],
         }}
         transition={{
@@ -175,7 +175,7 @@ export const MagneticCursor: React.FC = () => {
       animate={{
         x: mousePosition.x - 10,
         y: mousePosition.y - 10,
-        scale: isHovering ? 1.5 : 1,
+                      scale: isHovering ? 1 : 1,
       }}
       transition={{
         type: "spring",

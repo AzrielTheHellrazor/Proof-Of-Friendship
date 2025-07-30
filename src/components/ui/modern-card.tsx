@@ -86,8 +86,8 @@ export const ModernCard: React.FC<ModernCardProps> = ({
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
-      whileHover={interactive ? { scale: 1.02, y: -5 } : {}}
-      whileTap={interactive ? { scale: 0.98 } : {}}
+      whileHover={interactive ? { scale: 1, y: -5 } : {}}
+      whileTap={interactive ? { scale: 1 } : {}}
     >
       {/* Holographic shimmer effect */}
       {variant === 'holographic' && (
@@ -111,8 +111,8 @@ export const ModernCard: React.FC<ModernCardProps> = ({
       {isHovered && interactive && (
         <motion.div
           className="absolute inset-0 rounded-3xl border-2 border-purple-400/50"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, scale: 1 }}
+        animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         />
       )}
@@ -193,8 +193,8 @@ export const MorphingButton: React.FC<MorphingButtonProps> = ({
       onMouseUp={() => setIsPressed(false)}
       onClick={onClick}
       disabled={disabled}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1 }}
+          whileTap={{ scale: 1 }}
       animate={{
         borderRadius: isHovered ? [16, 24, 16] : 16,
       }}
@@ -219,8 +219,8 @@ export const MorphingButton: React.FC<MorphingButtonProps> = ({
       {isPressed && (
         <motion.div
           className="absolute inset-0 bg-white/30 rounded-full"
-          initial={{ scale: 0, opacity: 1 }}
-          animate={{ scale: 2, opacity: 0 }}
+                      initial={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 0 }}
           transition={{ duration: 0.4 }}
         />
       )}
@@ -270,8 +270,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         className
       )}
       onClick={onClick}
-      whileHover={{ scale: 1.1, rotate: 15 }}
-      whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1, rotate: 15 }}
+            whileTap={{ scale: 1 }}
       animate={{
         y: [0, -5, 0],
       }}
