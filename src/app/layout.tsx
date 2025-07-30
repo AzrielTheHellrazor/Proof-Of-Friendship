@@ -18,16 +18,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Proof of Friendship - Modern NFT Experience",
-  description: "Create unique NFTs as proof of attending social events with friends. Each event becomes a permanent memory on the blockchain with beautiful, modern design.",
-  keywords: ["NFT", "friendship", "events", "blockchain", "social", "memories"],
+  description: "Transform your friendship moments into unique NFTs. Preserve your social experiences on the blockchain with our modern, user-friendly platform.",
+  keywords: ["NFT", "friendship", "blockchain", "social", "memories", "digital collectibles", "web3"],
   authors: [{ name: "Proof of Friendship Team" }],
   openGraph: {
     title: "Proof of Friendship - Modern NFT Experience",
-    description: "Mint your friendship memories as beautiful NFTs",
+    description: "Create unique NFTs from your friendship moments and social experiences",
     type: "website",
   },
   viewport: "width=device-width, initial-scale=1",
-  themeColor: "#8b5cf6",
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({
@@ -38,16 +38,15 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20 min-h-screen transition-colors duration-300 relative overflow-x-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 min-h-screen transition-colors duration-300 relative overflow-x-hidden`}
       >
-        {/* Vibrant background patterns */}
-        <div className="fixed inset-0 bg-pattern-dots opacity-30 pointer-events-none" />
-        <div className="fixed inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none" />
+        {/* Subtle background patterns */}
+        <div className="fixed inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
         
-        {/* Animated gradient orbs */}
-        <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
-        <div className="fixed bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-pink-400/15 to-purple-400/15 rounded-full blur-2xl animate-float pointer-events-none" />
+        {/* Gentle animated orbs */}
+        <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/5 to-indigo-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
+        <div className="fixed bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-indigo-400/5 to-purple-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-purple-400/3 to-blue-400/3 rounded-full blur-2xl animate-float pointer-events-none" />
         
         <Providers>
           <div className="relative z-10">

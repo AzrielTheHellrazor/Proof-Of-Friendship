@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Heart, Users, Calendar, Trophy, AlertCircle, Wallet, ArrowRight, Star, Zap, Globe, Shield, Rocket, Gift, Crown } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Sparkles, Users, Calendar, Trophy, AlertCircle, Wallet, ArrowRight, Star, Zap, Globe, Shield, Rocket, Gift, Crown, Eye, Brain, Cpu } from 'lucide-react';
 import { useAccount, useConnect } from 'wagmi';
 import { useInView } from 'react-intersection-observer';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, StatsCard } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
+import { ModernCard, MorphingButton, FloatingActionButton } from '@/components/ui/modern-card';
+import { FloatingNav, MagneticCursor, ParticleSystem } from '@/components/ui/floating-nav';
 import { showToast } from '@/components/ui/toast';
-import { EventCardSkeleton, StatsCardSkeleton, LoadingGrid } from '@/components/ui/loading-skeleton';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useGetAllEvents, useCountEventsAttended } from '@/hooks/useContract';
+// import { useCountEventsAttended } from '@/hooks/useContract';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Mock events for testing (replace with contract data)
 const mockEvents = [
@@ -41,40 +42,78 @@ const mockEvents = [
   }
 ];
 
-// Enhanced features data with vibrant icons
+// Enhanced features data with modern theme
 const features = [
   {
-    icon: <Shield className="w-8 h-8 text-purple-600" />,
-    title: "Blockchain Secured",
-    description: "Your memories are permanently stored on the blockchain",
-    gradient: "from-purple-500 to-pink-500",
-    bgGradient: "from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30"
+    icon: <Shield className="w-8 h-8" />,
+    title: "Blockchain Security",
+    description: "Your memories are permanently secured on the blockchain",
+    gradient: "from-blue-500 to-indigo-500",
+    bgGradient: "from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30",
+    iconColor: "text-blue-600",
+    glowClass: "neon-glow-blue"
   },
   {
-    icon: <Zap className="w-8 h-8 text-blue-600" />,
+    icon: <Zap className="w-8 h-8" />,
     title: "Instant Minting",
-    description: "Mint your NFTs instantly with a single click",
-    gradient: "from-blue-500 to-cyan-500",
-    bgGradient: "from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30"
+    description: "Create your NFTs instantly with a single click",
+    gradient: "from-indigo-500 to-purple-500",
+    bgGradient: "from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30",
+    iconColor: "text-indigo-600",
+    glowClass: "neon-glow"
   },
   {
-    icon: <Globe className="w-8 h-8 text-green-600" />,
-    title: "Social Proof",
-    description: "Show the world your amazing social experiences",
-    gradient: "from-green-500 to-emerald-500",
-    bgGradient: "from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30"
+    icon: <Brain className="w-8 h-8" />,
+    title: "AI Enhanced",
+    description: "Advanced experience analysis with artificial intelligence",
+    gradient: "from-emerald-500 to-teal-500",
+    bgGradient: "from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30",
+    iconColor: "text-emerald-600",
+    glowClass: "neon-glow-blue"
+  },
+  {
+    icon: <Eye className="w-8 h-8" />,
+    title: "Digital Memories",
+    description: "Store your friendship moments as digital collectibles",
+    gradient: "from-rose-500 to-pink-500",
+    bgGradient: "from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30",
+    iconColor: "text-rose-600",
+    glowClass: "neon-glow-pink"
+  },
+  {
+    icon: <Cpu className="w-8 h-8" />,
+    title: "Smart Contracts",
+    description: "Powered by secure and efficient smart contracts",
+    gradient: "from-violet-500 to-purple-500",
+    bgGradient: "from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30",
+    iconColor: "text-violet-600",
+    glowClass: "cyberpunk-glow"
+  },
+  {
+    icon: <Globe className="w-8 h-8" />,
+    title: "Global Network",
+    description: "Connect with friends across the decentralized web",
+    gradient: "from-teal-500 to-cyan-500",
+    bgGradient: "from-teal-100 to-cyan-100 dark:from-teal-900/30 dark:to-cyan-900/30",
+    iconColor: "text-teal-600",
+    glowClass: "neon-glow-blue"
   }
 ];
 
 export default function Home() {
   const { address, isConnected } = useAccount();
   const { connectors, connect, isPending: isConnecting } = useConnect();
-  const { data: eventsData } = useGetAllEvents();
-  const { data: userEventCount } = useCountEventsAttended(address);
+  // const { data: userEventCount } = useCountEventsAttended(address);
+  const userEventCount = 0; // Mock data for now
 
-  // Loading states
+  // Enhanced state management
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
+
+  // Scroll-based animations
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 500], [0, -150]);
+  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.5]);
 
   // Intersection observers for animations
   const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.1, triggerOnce: true });
@@ -100,10 +139,12 @@ export default function Home() {
       setShowWelcome(true);
       showToast.success(
         "Wallet Connected! 🎉",
-        "You can now mint NFTs and store your event memories on the blockchain."
+        "You can now create NFTs and store your event memories on the blockchain."
       );
     }
   }, [isConnected, showWelcome]);
+
+
 
   const handleConnectWallet = async () => {
     try {
@@ -111,63 +152,49 @@ export default function Home() {
         await connect({ connector: connectors[0] });
         showToast.info("Connecting Wallet...", "Please approve the transaction in your wallet app.");
       }
-    } catch (error) {
+    } catch {
       showToast.error("Connection Failed", "Failed to connect wallet. Please try again.");
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
-        {/* Header Skeleton */}
-        <header className="glass border-b border-white/20 dark:border-gray-700 sticky top-0 z-50">
-          <div className="container-modern py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl animate-pulse" />
-                <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-              </div>
-              <div className="h-11 w-32 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        {/* Modern Loading Screen */}
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="text-center space-y-8">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="mx-auto"
+            >
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+            </motion.div>
+            <motion.h2
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-4xl font-bold text-slate-800 dark:text-slate-200"
+            >
+              Proof of Friendship
+            </motion.h2>
+            <motion.p
+              animate={{ opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="text-slate-600 dark:text-slate-400 text-xl"
+            >
+              Loading your experience...
+            </motion.p>
           </div>
-        </header>
-
-        <main className="container-modern section-padding">
-          {/* Hero Skeleton */}
-          <section className="text-center py-16 mb-16">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded-2xl mx-auto animate-pulse" />
-              <div className="h-6 w-2/3 bg-gray-200 dark:bg-gray-700 rounded-lg mx-auto animate-pulse" />
-              <div className="h-14 w-48 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto animate-pulse" />
-            </div>
-          </section>
-
-          {/* Stats Skeleton */}
-          <section className="mb-16">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <StatsCardSkeleton key={i} />
-              ))}
-            </div>
-          </section>
-
-          {/* Events Skeleton */}
-          <section>
-            <div className="flex items-center justify-between mb-8">
-              <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-              <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-            </div>
-            <LoadingGrid count={6} />
-          </section>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Enhanced Modern Header */}
-      <header className="glass border-b border-white/20 dark:border-gray-700 sticky top-0 z-50 backdrop-blur-xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 relative overflow-hidden">
+      
+      {/* Modern Header */}
+      <header className="bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 backdrop-blur-xl">
         <div className="container-modern py-4">
           <div className="flex items-center justify-between">
             <motion.div 
@@ -176,10 +203,10 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg animate-glow neon-glow">
-                <span className="text-white text-2xl animate-bounce-gentle">🫂</span>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-2xl">🫂</span>
               </div>
-              <h1 className="text-2xl font-bold gradient-text-animate">Proof of Friendship</h1>
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Proof of Friendship</h1>
             </motion.div>
             
             <motion.div
@@ -192,20 +219,18 @@ export default function Home() {
               
               {isConnected ? (
                 <div className="flex items-center space-x-3">
-                  <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg neon-glow-blue">
+                  <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
                     ✅ Connected
                   </div>
-                  <div className="glass bg-white/10 dark:bg-gray-800/10 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-full text-sm font-mono border border-white/20 dark:border-gray-600">
+                  <div className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-mono">
                     {address?.slice(0, 6)}...{address?.slice(-4)}
                   </div>
                 </div>
               ) : (
-                <Button 
+                <button 
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  variant="modern"
-                  size="lg"
-                  className="neon-glow"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isConnecting ? (
                     <div className="flex items-center space-x-2">
@@ -218,66 +243,79 @@ export default function Home() {
                       <span>Connect Wallet</span>
                     </div>
                   )}
-                </Button>
+                </button>
               )}
             </motion.div>
           </div>
         </div>
       </header>
 
-      <main className="container-modern">
-        {/* Enhanced Hero Section */}
-        <section ref={heroRef} className="section-padding text-center relative">
-          {/* Animated particles */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="particle"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 6}s`,
-                  animationDuration: `${6 + Math.random() * 4}s`
-                }}
-              />
-            ))}
-          </div>
+      {/* Floating Navigation */}
+      <FloatingNav />
+      
+      {/* Magnetic Cursor */}
+      <MagneticCursor />
+      
+      {/* Background Particle System */}
+      <ParticleSystem />
 
+      <main className="container-modern relative z-10">
+        {/* Futuristic Hero Section with 3D Effects */}
+        <section id="home" ref={heroRef} className="section-padding text-center relative perspective-1000">
           <motion.div
+            style={{ y: heroY, opacity: heroOpacity }}
             initial={{ opacity: 0, y: 40 }}
             animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="max-w-4xl mx-auto relative z-10"
+            className="max-w-5xl mx-auto relative z-10 transform-3d"
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={heroInView ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className="mb-8"
+              initial={{ scale: 0.8, opacity: 0, rotateY: -30 }}
+              animate={heroInView ? { scale: 1, opacity: 1, rotateY: 0 } : { scale: 0.8, opacity: 0, rotateY: -30 }}
+              transition={{ duration: 1.2, delay: 0.2 }}
+              className="mb-12"
             >
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-glow neon-glow">
-                <Rocket className="w-12 h-12 text-white animate-bounce-gentle" />
+              <div className="w-32 h-32 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-8 neon-glow-blue holographic-gradient pulse-cyber">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                >
+                  <Brain className="w-16 h-16 text-white" />
+                </motion.div>
               </div>
             </motion.div>
 
-            <h2 className="text-6xl lg:text-7xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-shadow-vibrant leading-tight">
-              Mint Your
-              <span className="text-gradient-rainbow block animate-pulse-slow">Friendship Memories</span>
-            </h2>
-            <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed max-w-2xl mx-auto">
-              Create unique NFTs as proof of attending social events with friends. 
-              Each event becomes a permanent memory on the blockchain.
-            </p>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-6xl lg:text-7xl font-bold mb-8 leading-tight"
+            >
+              <span className="text-slate-800 dark:text-slate-200 block">Create Your</span>
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Friendship Memories</span>
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-xl lg:text-2xl text-slate-600 dark:text-slate-400 mb-16 leading-relaxed max-w-3xl mx-auto"
+            >
+              Transform your social experiences into <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">unique NFTs</span> and 
+              preserve your friendship moments on the blockchain forever
+            </motion.p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            >
               {!isConnected ? (
-                <Button 
+                <button 
                   onClick={handleConnectWallet}
                   disabled={isConnecting}
-                  variant="modern"
-                  size="xl"
-                  className="group neon-glow"
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   {isConnecting ? (
                     <div className="flex items-center space-x-3">
@@ -286,164 +324,224 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-3">
-                      <Wallet className="w-6 h-6 transition-transform group-hover:scale-110" />
+                      <Rocket className="w-6 h-6 transition-transform group-hover:scale-110" />
                       <span>Get Started</span>
                       <ArrowRight className="w-6 h-6 transition-transform group-hover:translate-x-1" />
                     </div>
                   )}
-                </Button>
+                </button>
               ) : (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="glass-vibrant bg-white/10 dark:bg-gray-800/10 p-6 text-center neon-glow-pink"
-                >
-                  <div className="text-2xl mb-2 animate-bounce-gentle">🎉</div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Amazing!</h3>
-                  <p className="text-gray-600 dark:text-gray-300">Your wallet is connected, you can now mint NFTs</p>
-                </motion.div>
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-4xl mb-4"
+                  >
+                    ✅
+                  </motion.div>
+                  <h3 className="font-bold text-2xl text-slate-800 dark:text-slate-200 mb-2">Wallet Connected!</h3>
+                  <p className="text-slate-600 dark:text-slate-400">You can now create NFTs</p>
+                </div>
               )}
-            </div>
+            </motion.div>
+
+            {/* Holographic data stream effect */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              transition={{ delay: 1 }}
+              className="absolute inset-0 pointer-events-none"
+            >
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-px h-20 bg-gradient-to-b from-cyan-400/50 to-transparent"
+                  style={{
+                    left: `${10 + i * 10}%`,
+                    top: `${20 + (i % 3) * 20}%`,
+                  }}
+                  animate={{
+                    height: [20, 80, 20],
+                    opacity: [0.2, 0.8, 0.2],
+                  }}
+                  transition={{
+                    duration: 2 + i * 0.2,
+                    repeat: Infinity,
+                    delay: i * 0.3,
+                  }}
+                />
+              ))}
+            </motion.div>
           </motion.div>
         </section>
 
-        {/* Enhanced Demo Warning */}
+        {/* Demo Status */}
         {!isContractDeployed && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-12"
+            className="mb-16"
           >
-            <Card variant="gradient" className="border-amber-200 dark:border-amber-600 neon-glow-pink">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse-slow">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-amber-800 dark:text-amber-200 mb-1 text-lg">Demo Mode</h3>
-                    <p className="text-amber-700 dark:text-amber-300 text-sm">
-                      Smart contract is not deployed yet. This is a demo with mock data.
-                    </p>
-                  </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h3 className="font-bold text-amber-800 dark:text-amber-200 mb-1 text-lg">Demo Mode</h3>
+                  <p className="text-amber-700 dark:text-amber-300 text-base">
+                    Smart contract is not deployed yet. This is a demo running with mock data.
+                  </p>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
 
-        {/* Enhanced User Stats */}
+        {/* User Statistics Dashboard */}
         {isConnected && (
           <motion.section
+            id="stats"
             ref={statsRef}
             initial={{ opacity: 0, y: 40 }}
             animate={statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-16"
+            className="mb-20"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatsCard
-                icon={<Trophy className="w-7 h-7 text-purple-600" />}
-                title="Events Attended"
-                value={userEventCount?.toString() || '0'}
-                description="Total events you've joined"
-                trend={{ value: 12, isPositive: true }}
-              />
+            <div className="text-center mb-12">
+              <motion.h3
+                initial={{ opacity: 0, y: 20 }}
+                animate={statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-4xl font-bold text-slate-800 dark:text-slate-200 mb-4"
+              >
+                Your Statistics
+              </motion.h3>
+              <p className="text-slate-600 dark:text-slate-400 text-xl">Real-time blockchain data</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center hover:shadow-lg transition-all duration-300">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Trophy className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">{userEventCount?.toString() || '0'}</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-lg">Events Attended</p>
+                <div className="mt-4 text-emerald-600 text-sm">
+                  ↗ +12% this month
+                </div>
+              </div>
               
-              <StatsCard
-                icon={<Users className="w-7 h-7 text-blue-600" />}
-                title="Available Events"
-                value={events.length}
-                description="Events you can join"
-                trend={{ value: 8, isPositive: true }}
-              />
+              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center hover:shadow-lg transition-all duration-300">
+                <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">{events.length}</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-lg">Available Events</p>
+                <div className="mt-4 text-emerald-600 text-sm">
+                  ↗ +8% this month
+                </div>
+              </div>
               
-              <StatsCard
-                icon={<Star className="w-7 h-7 text-green-600" />}
-                title="Total NFTs"
-                value={events.reduce((acc, event) => acc + event.totalMinted, 0)}
-                description="NFTs minted so far"
-                trend={{ value: 15, isPositive: true }}
-              />
+              <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center hover:shadow-lg transition-all duration-300">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Star className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="text-3xl font-bold text-slate-800 dark:text-slate-200 mb-2">{events.reduce((acc, event) => acc + event.totalMinted, 0)}</h4>
+                <p className="text-slate-600 dark:text-slate-400 text-lg">Total NFTs</p>
+                <div className="mt-4 text-emerald-600 text-sm">
+                  ↗ +15% this month
+                </div>
+              </div>
             </div>
           </motion.section>
         )}
 
-        {/* Enhanced Features Section */}
+        {/* Modern Features */}
         <motion.section
+          id="features"
           ref={featuresRef}
           initial={{ opacity: 0, y: 40 }}
           animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
           transition={{ duration: 0.8 }}
-          className="mb-16"
+          className="mb-20"
         >
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={featuresInView ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="mb-6"
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="mb-8"
             >
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full flex items-center justify-center mx-auto animate-glow neon-glow">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto">
                 <Crown className="w-10 h-10 text-white" />
               </div>
             </motion.div>
-            <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Why <span className="text-gradient-rainbow">Proof of Friendship?</span>
+            <h3 className="text-4xl font-bold text-slate-800 dark:text-slate-200 mb-6">
+              Why Choose Proof of Friendship?
             </h3>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Store your friendship memories securely and permanently
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+              Cutting-edge blockchain technology to preserve and celebrate your friendships
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={featuresInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Card variant="modern" hover className="text-center h-full neon-glow">
-                  <CardContent className="p-8">
-                    <div className={`w-20 h-20 bg-gradient-to-br ${feature.bgGradient} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform animate-pulse-slow`}>
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center h-full hover:shadow-lg transition-all duration-300">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${feature.bgGradient} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
+                    <div className={feature.iconColor}>
                       {feature.icon}
                     </div>
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">{feature.title}</h4>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <h4 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
+                    {feature.title}
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* Enhanced Events Section */}
+        {/* Events Gallery */}
         <motion.section
+          id="events"
           ref={eventsRef}
           initial={{ opacity: 0, y: 40 }}
           animate={eventsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
           transition={{ duration: 0.8 }}
-          className="mb-16"
+          className="mb-20"
         >
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={eventsInView ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mb-4"
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full flex items-center justify-center mx-auto animate-glow neon-glow">
-                  <Gift className="w-8 h-8 text-white" />
-                </div>
-              </motion.div>
-              <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Available Events</h3>
-              <p className="text-xl text-gray-600 dark:text-gray-300">Mint your friendship memories</p>
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 dark:border-gray-600">
-              {events.length} events available
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={eventsInView ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="mb-8"
+            >
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto">
+                <Gift className="w-10 h-10 text-white" />
+              </div>
+            </motion.div>
+            <h3 className="text-4xl font-bold text-slate-800 dark:text-slate-200 mb-6">
+              Available Events
+            </h3>
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-8">
+              Transform your friendship moments into digital collectibles
+            </p>
+            <div className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-6 py-3 rounded-full inline-flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <span className="font-medium">{events.length} events available</span>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             </div>
           </div>
           
@@ -455,57 +553,57 @@ export default function Home() {
                 animate={eventsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Card variant="modern" hover className="group overflow-hidden neon-glow">
+                <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden group hover:shadow-lg transition-all duration-300">
                   <div className="relative">
-                    <img 
+                    <Image 
                       src={event.imageURI} 
                       alt={event.name}
-                      className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                      width={400}
+                      height={256}
+                      className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute top-4 right-4 glass bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full px-3 py-1">
-                      <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 rounded-full px-3 py-1">
+                      <span className="text-sm font-medium">
                         {event.totalMinted} minted
                       </span>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   
-                  <CardContent className="p-6">
+                  <div className="p-6">
                     <div className="space-y-4">
                       <div>
-                        <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        <h4 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">
                           {event.name}
                         </h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                           {event.description}
                         </p>
                       </div>
                       
                       <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
                           <Calendar className="w-4 h-4" />
-                          <span>{new Date(event.date).toLocaleDateString()}</span>
+                          <span className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
                         </div>
                         <Link href={`/events/${event.id}`}>
-                          <Button 
-                            variant="gradient"
-                            size="sm"
-                            className="group/btn"
-                          >
-                            <span>View Event</span>
-                            <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
-                          </Button>
+                          <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 group/btn">
+                            <div className="flex items-center space-x-2">
+                              <span>View Event</span>
+                              <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                            </div>
+                          </button>
                         </Link>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* Enhanced CTA Section */}
+        {/* Call-to-Action */}
         <section className="section-padding">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -513,69 +611,78 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <Card variant="gradient" className="text-center overflow-hidden relative neon-glow">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10" />
-              <CardContent className="relative z-10 p-12">
-                <div className="max-w-2xl mx-auto">
-                  <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="text-6xl mb-6"
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-slate-700 rounded-xl text-center overflow-hidden relative p-16">
+              
+              <div className="max-w-3xl mx-auto">
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="text-6xl mb-8"
+                >
+                  🎉
+                </motion.div>
+                
+                <h3 className="text-5xl font-bold text-slate-800 dark:text-slate-200 mb-8">
+                  Ready to Create Memories?
+                </h3>
+                
+                <p className="text-xl text-slate-600 dark:text-slate-400 mb-12 leading-relaxed">
+                  Connect your wallet and start creating <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">unique NFTs</span> from 
+                  your friendship moments
+                </p>
+                
+                {!isConnected ? (
+                  <button 
+                    onClick={handleConnectWallet}
+                    disabled={isConnecting}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
-                    🎉
-                  </motion.div>
-                  <h3 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-                    Ready to start collecting memories?
-                  </h3>
-                  <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                    Connect your wallet and begin your journey of friendship NFTs
-                  </p>
-                  
-                  {!isConnected ? (
-                    <Button 
-                      onClick={handleConnectWallet}
-                      disabled={isConnecting}
-                      variant="modern"
-                      size="xl"
-                      className="group neon-glow"
-                    >
-                      {isConnecting ? (
-                        <div className="flex items-center space-x-3">
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Connecting...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-3">
-                          <Wallet className="w-6 h-6 transition-transform group-hover:scale-110" />
-                          <span>Connect Wallet</span>
-                          <Sparkles className="w-6 h-6 transition-transform group-hover:rotate-12" />
-                        </div>
-                      )}
-                    </Button>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="glass-vibrant bg-emerald-500/20 dark:bg-emerald-500/10 p-6 backdrop-blur-sm neon-glow-blue">
-                        <div className="flex items-center justify-center space-x-3 text-emerald-800 dark:text-emerald-200">
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                          >
-                            ✅
-                          </motion.div>
-                          <span className="font-bold text-lg">Wallet Connected!</span>
-                        </div>
+                    {isConnecting ? (
+                      <div className="flex items-center space-x-3">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Connecting...</span>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-300">
-                        Browse the events above to start minting your friendship memories
-                      </p>
+                    ) : (
+                      <div className="flex items-center space-x-3">
+                        <Wallet className="w-6 h-6 transition-transform group-hover:scale-110" />
+                        <span>Connect Wallet</span>
+                        <Sparkles className="w-6 h-6 transition-transform group-hover:rotate-12" />
+                      </div>
+                    )}
+                  </button>
+                ) : (
+                  <div className="space-y-8">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-8">
+                      <div className="flex items-center justify-center space-x-4 text-emerald-700 dark:text-emerald-300">
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          ✅
+                        </motion.div>
+                        <span className="font-bold text-2xl">Wallet Connected!</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    
+                    <p className="text-slate-600 dark:text-slate-400 text-xl">
+                      Browse the events above to start creating your friendship NFTs
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
         </section>
       </main>
+      
+      {/* Floating Action Button */}
+      <FloatingActionButton 
+        icon={<Rocket className="w-8 h-8" />}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      />
     </div>
   );
 }
+
