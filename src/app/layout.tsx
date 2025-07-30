@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   viewport: "width=device-width, initial-scale=1",
-  themeColor: "#3b82f6",
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -36,24 +36,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 min-h-screen transition-colors duration-300 relative overflow-x-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen transition-colors duration-300`}
       >
-        {/* Subtle background patterns */}
-        <div className="fixed inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
-        
-        {/* Gentle animated orbs */}
-        <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/5 to-indigo-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
-        <div className="fixed bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-indigo-400/5 to-purple-400/5 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-purple-400/3 to-blue-400/3 rounded-full blur-2xl animate-float pointer-events-none" />
-        
         <Providers>
-          <div className="relative z-10">
+          <div className="relative">
             {/* Main content */}
-            <div className="relative z-10">
-              {children}
-            </div>
+            {children}
             
             {/* Modern toast notifications */}
             <ModernToaster />
