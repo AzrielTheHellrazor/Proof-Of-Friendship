@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import { Wallet, Users, Calendar, Trophy, Star, Heart, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
 import { useAccount, useConnect } from 'wagmi';
 import Link from 'next/link';
@@ -14,8 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-import { Separator } from '@/components/ui/separator';
 import { showToast } from '@/components/ui/toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -104,16 +102,12 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <motion.div 
-            className="flex items-center space-x-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
+          <div className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Heart className="h-6 w-6" />
             </div>
             <h1 className="text-xl font-bold">Proof of Friendship</h1>
-          </motion.div>
+          </div>
 
           <div className="flex items-center space-x-4">
             <ThemeToggle />
@@ -148,12 +142,7 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8 space-y-16">
         {/* Hero Section */}
         <section className="text-center space-y-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6"
-          >
+          <div className="space-y-6">
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-8">
               <Sparkles className="h-10 w-10 text-primary-foreground" />
             </div>
@@ -170,16 +159,15 @@ export default function Home() {
               Connect, create, and collect memories that last a lifetime.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
-                Learn More
+            <div className="flex justify-center">
+              <Button asChild size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
+                <Link href="/create">
+                  Create NFT
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* Demo Alert */}
@@ -192,11 +180,7 @@ export default function Home() {
 
         {/* User Stats */}
         {isConnected && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
+          <section className="space-y-8">
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold">Your Statistics</h2>
               <p className="text-muted-foreground">Track your journey on the blockchain</p>
@@ -239,7 +223,7 @@ export default function Home() {
                 </CardContent>
               </Card>
             </div>
-          </motion.section>
+          </section>
         )}
 
 
@@ -263,13 +247,8 @@ export default function Home() {
 
             <TabsContent value={activeTab} className="mt-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event, index) => (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
+                {filteredEvents.map((event) => (
+                  <div key={event.id}>
                     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                       <div className="relative">
                         <Image 
@@ -307,52 +286,13 @@ export default function Home() {
                         </div>
                       </CardContent>
                     </Card>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </TabsContent>
           </Tabs>
         </section>
 
-        {/* CTA Section */}
-        <section className="text-center space-y-8">
-          <Card className="p-12 bg-gradient-to-r from-primary/10 to-primary/5">
-            <CardContent className="space-y-6">
-              <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center">
-                <Heart className="h-8 w-8 text-primary-foreground" />
-              </div>
-              
-              <h2 className="text-3xl font-bold">Ready to Create Memories?</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                Join thousands of users who are already preserving their friendship moments on the blockchain
-              </p>
-              
-              {isConnected ? (
-                <Alert className="max-w-md mx-auto">
-                  <Sparkles className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Wallet Connected!</strong> You&apos;re all set to start creating NFTs from your events!
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Button size="lg" onClick={handleConnectWallet} disabled={isConnecting} className="text-lg px-8">
-                  {isConnecting ? (
-                    <>
-                      <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Connecting...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-5 w-5" />
-                      Start Your Journey
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </section>
       </main>
 
     </div>
