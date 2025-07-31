@@ -362,94 +362,97 @@ export default function CreateNFT() {
                   </div>
                 </div>
 
-                {/* Image Upload */}
+                                {/* Image Upload */}
                 <div className="space-y-2">
                   <Label htmlFor="image">Event Image * (AI Generated)</Label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center space-y-4">
-                    {imagePreview ? (
-                      <div className="space-y-4">
+                  
+                  {imagePreview ? (
+                    /* Image Preview - No Dashed Border */
+                    <div className="space-y-4 animate-in fade-in-50 duration-500">
+                      <div className="relative overflow-hidden rounded-xl shadow-lg">
                         <Image
                           src={imagePreview}
-                          alt="Preview"
-                          width={400}
-                          height={200}
-                          className="max-w-full h-48 object-cover rounded-lg mx-auto"
+                          alt="Generated Friendship Memory"
+                          width={600}
+                          height={400}
+                          className="w-full h-64 md:h-80 object-cover transition-all duration-300 hover:scale-105"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      
+                      {/* IPFS Upload Status */}
+                      {imageUploadedToIPFS && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm text-green-800 font-medium">✅ Uploaded to IPFS</p>
+                          <p className="text-xs text-green-600 break-all">{imageUploadedToIPFS}</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setImagePreview(null);
+                            setFormData(prev => ({ ...prev, image: null }));
+                            setImageUploadedToIPFS(null);
+                          }}
+                        >
+                          Generate New Image
+                        </Button>
                         
-                        {/* IPFS Upload Status */}
-                        {imageUploadedToIPFS && (
-                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <p className="text-sm text-green-800 font-medium">✅ Uploaded to IPFS</p>
-                            <p className="text-xs text-green-600 break-all">{imageUploadedToIPFS}</p>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2 justify-center">
+                        {!imageUploadedToIPFS && (
                           <Button
                             type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setImagePreview(null);
-                              setFormData(prev => ({ ...prev, image: null }));
-                              setImageUploadedToIPFS(null);
-                
-                            }}
+                            variant="default"
+                            onClick={handleUploadImageToIPFS}
+                            disabled={isUploadingImage}
                           >
-                            Generate New Image
-                          </Button>
-                          
-                          {!imageUploadedToIPFS && (
-                            <Button
-                              type="button"
-                              variant="default"
-                              onClick={handleUploadImageToIPFS}
-                              disabled={isUploadingImage}
-                            >
-                              {isUploadingImage ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Uploading...
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="mr-2 h-4 w-4" />
-                                  Upload to IPFS
-                                </>
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto" />
-                        <div className="space-y-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            className="cursor-pointer"
-                            onClick={handleCreateImage}
-                            disabled={isGeneratingImage || !formData.eventName || !formData.description}
-                          >
-                            {isGeneratingImage ? (
+                            {isUploadingImage ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generating...
+                                Uploading...
                               </>
                             ) : (
                               <>
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Create Image with AI
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload to IPFS
                               </>
                             )}
                           </Button>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          AI will create a unique image based on your event name and description
-                        </p>
-                      </>
-                    )}
-                  </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Upload Area - With Dashed Border */
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center space-y-4">
+                      <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto" />
+                      <div className="space-y-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="cursor-pointer"
+                          onClick={handleCreateImage}
+                          disabled={isGeneratingImage || !formData.eventName || !formData.description}
+                        >
+                          {isGeneratingImage ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Create Image with AI
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        AI will create a unique image based on your event name and description
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress Bar */}
