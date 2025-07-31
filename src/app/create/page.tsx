@@ -70,8 +70,12 @@ export default function CreateNFT() {
       // Dynamic import for client-side usage
       const { GoogleGenAI, Modality } = await import("@google/genai");
       
+      if (!process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY) {
+        throw new Error("Google GenAI API key not configured. Please add NEXT_PUBLIC_GOOGLE_GENAI_API_KEY to your .env.local file.");
+      }
+
       const ai = new GoogleGenAI({
-        apiKey: process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY || "AIzaSyAkLgojM36S73W2uHCJyRDReR81EUx9A_0"
+        apiKey: process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY
       });
 
       const prompt = `Create a beautiful, artistic image for a friendship memory titled "${formData.eventName}". Description: ${formData.description}. ${formData.location ? `Location: ${formData.location}. ` : ''}${formData.date ? `Date: ${formData.date}. ` : ''}Make it warm, friendly, and memorable. Style should be vibrant and joyful.`;
