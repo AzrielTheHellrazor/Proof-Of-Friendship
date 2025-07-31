@@ -2,9 +2,20 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+solc_version = "0.8.30"
+optimizer = true
+optimizer_runs = 1000
+via_ir = true
 remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/"
 ]
+
+# Production profile with aggressive optimization for deployment
+[profile.production]
+optimizer = true
+optimizer_runs = 10000
+via_ir = true
+bytecode_hash = "none"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

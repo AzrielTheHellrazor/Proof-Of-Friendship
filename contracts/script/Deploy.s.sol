@@ -2,37 +2,27 @@
 pragma solidity ^0.8.19;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ProofOfFriendship} from "../src/ProofOfFriendship.sol";
+import {ProofOfFriendshipRouter} from "../src/ProofOfFriendshipRouter.sol";
 
 contract DeployScript is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        // Get private key from .env file (handles both with and without 0x prefix)
+        string memory privateKeyStr = vm.envString("PRIVATE_KEY");
+        uint256 deployerPrivateKey;
+        
+        // Add 0x prefix if not present
+        if (bytes(privateKeyStr).length == 64) {
+            // No 0x prefix, add it
+            deployerPrivateKey = vm.parseUint(string(abi.encodePacked("0x", privateKeyStr)));
+        } else {
+            // Has 0x prefix already
+            deployerPrivateKey = vm.parseUint(privateKeyStr);
+        }
+        
         vm.startBroadcast(deployerPrivateKey);
-
-        ProofOfFriendship proofOfFriendship = new ProofOfFriendship();
-
-        // Create some sample events for testing
-        proofOfFriendship.createEvent(
-            "Summer BBQ Party",
-            "A fun summer barbecue with friends and family. We grilled burgers, played games, and enjoyed the beautiful weather together.",
-            "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop"
-        );
-
-        proofOfFriendship.createEvent(
-            "Game Night",
-            "Board games and pizza night with the crew. We played everything from classic Monopoly to modern strategy games.",
-            "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop"
-        );
-
-        proofOfFriendship.createEvent(
-            "Beach Day",
-            "Sun, sand, and waves with close friends. We spent the day building sandcastles, playing beach volleyball, and enjoying the ocean breeze.",
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop"
-        );
+        // Deploy the main ProofOfFriendshipRouter contract
+        ProofOfFriendshipRouter router = new ProofOfFriendshipRouter();
 
         vm.stopBroadcast();
-
-        console.log("ProofOfFriendship deployed at:", address(proofOfFriendship));
-        console.log("Created 3 sample events");
     }
 } 
