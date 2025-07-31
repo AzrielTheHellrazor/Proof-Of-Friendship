@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 // import { motion } from 'framer-motion';
-import { Upload, ArrowLeft, ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, ArrowLeft, ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createThirdwebClient } from "thirdweb";
 import { upload } from "thirdweb/storage";
+// Dynamic import for Google GenAI will be done inside the function
 
 // Shadcn Components
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,9 @@ export default function CreateNFT() {
     image: null as File | null
   });
   
+
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
   const [isCreating, setIsCreating] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -52,23 +56,63 @@ export default function CreateNFT() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        image: file
-      }));
+  const handleCreateImage = async () => {
+    if (!formData.eventName || !formData.description) {
+      showToast.error("Missing Information", "Please fill in Event Name and Description first.");
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    
+    try {
+      showToast.info("Creating Image...", "AI is generating your friendship memory image.");
       
-      // Reset IPFS upload state when new image is selected
-      setImageUploadedToIPFS(null);
+      // Dynamic import for client-side usage
+      const { GoogleGenAI, Modality } = await import("@google/genai");
       
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      const ai = new GoogleGenAI({
+        apiKey: process.env.NEXT_PUBLIC_GOOGLE_GENAI_API_KEY || "AIzaSyAkLgojM36S73W2uHCJyRDReR81EUx9A_0"
+      });
+
+      const prompt = `Create a beautiful, artistic image for a friendship memory titled "${formData.eventName}". Description: ${formData.description}. ${formData.location ? `Location: ${formData.location}. ` : ''}${formData.date ? `Date: ${formData.date}. ` : ''}Make it warm, friendly, and memorable. Style should be vibrant and joyful.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash-preview-image-generation",
+        contents: prompt,
+        config: {
+          responseModalities: [Modality.TEXT, Modality.IMAGE],
+        },
+      });
+
+      if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData) {
+            const imageData = part.inlineData.data;
+            const imageUrl = `data:image/png;base64,${imageData}`;
+            
+            // Convert base64 to file for compatibility with existing upload logic
+            const base64Response = await fetch(imageUrl);
+            const blob = await base64Response.blob();
+            const file = new File([blob], 'generated-image.png', { type: 'image/png' });
+            
+            setFormData(prev => ({ ...prev, image: file }));
+            setImagePreview(imageUrl);
+  
+            setImageUploadedToIPFS(null); // Reset IPFS state
+            
+            showToast.success("Image Created!", "Your friendship memory image has been generated successfully!");
+            break;
+          }
+        }
+      } else {
+        throw new Error("No image generated in response");
+      }
+      
+    } catch (error) {
+      console.error("Image generation error:", error);
+      showToast.error("Generation Failed", "Failed to generate image. Please try again.");
+    } finally {
+      setIsGeneratingImage(false);
     }
   };
 
@@ -108,7 +152,7 @@ export default function CreateNFT() {
     }
 
     if (!formData.eventName || !formData.description || !formData.image) {
-      showToast.error("Missing Information", "Please fill in all required fields and upload an image.");
+      showToast.error("Missing Information", "Please fill in all required fields and create an image.");
       return;
     }
 
@@ -316,7 +360,7 @@ export default function CreateNFT() {
 
                 {/* Image Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="image">Event Image *</Label>
+                  <Label htmlFor="image">Event Image * (AI Generated)</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center space-y-4">
                     {imagePreview ? (
                       <div className="space-y-4">
@@ -344,9 +388,10 @@ export default function CreateNFT() {
                               setImagePreview(null);
                               setFormData(prev => ({ ...prev, image: null }));
                               setImageUploadedToIPFS(null);
+                
                             }}
                           >
-                            Change Image
+                            Generate New Image
                           </Button>
                           
                           {!imageUploadedToIPFS && (
@@ -379,22 +424,24 @@ export default function CreateNFT() {
                             type="button" 
                             variant="outline" 
                             className="cursor-pointer"
-                            onClick={() => document.getElementById('image-upload')?.click()}
+                            onClick={handleCreateImage}
+                            disabled={isGeneratingImage || !formData.eventName || !formData.description}
                           >
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Image
+                            {isGeneratingImage ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Create Image with AI
+                              </>
+                            )}
                           </Button>
-                          <input
-                            id="image-upload"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            style={{ display: 'none' }}
-                            required
-                          />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Upload a photo from your event (JPG, PNG, GIF)
+                          AI will create a unique image based on your event name and description
                         </p>
                       </>
                     )}
@@ -442,15 +489,15 @@ export default function CreateNFT() {
           <Alert>
             <Upload className="h-4 w-4" />
             <AlertDescription>
-              <strong>IPFS Upload Ready:</strong> You can now upload images directly to IPFS before creating the NFT! 
+              <strong>AI Image Generation Ready:</strong> Create unique images for your NFTs using AI! 
               <br />
-              1. Select an image to see the preview
+              1. Fill in Event Name and Description
               <br />
-              2. Click &quot;Upload to IPFS&quot; to upload your image to decentralized storage
+              2. Click &quot;Create Image with AI&quot; to generate your unique image
               <br />
-              3. Fill in the metadata and create your NFT
+              3. Upload to IPFS and create your NFT
               <br />
-              <strong>Note:</strong> Your files will be permanently stored on IPFS and accessible via gateways worldwide.
+              <strong>Note:</strong> AI will create a custom image based on your friendship memory details.
             </AlertDescription>
           </Alert>
         </div>
