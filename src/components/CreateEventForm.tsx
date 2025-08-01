@@ -101,7 +101,9 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
         files: [file],
       })
 
-      const ipfsURL = `ipfs://${uploadedURI}`
+      // Clean the uploaded URI to get just the hash
+      const cleanHash = uploadedURI.replace('ipfs://', '')
+      const ipfsURL = `ipfs://${cleanHash}`
       
       // Update form data with IPFS URL
       setFormData(prev => ({ ...prev, imageURI: ipfsURL }))
@@ -109,10 +111,11 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
       // Clear any previous imageURI errors
       setErrors(prev => ({ ...prev, imageURI: '' }))
       
-      // Show success toast with IPFS link
+      // Show success toast with gateway link
+      const gatewayURL = `https://ipfs.io/ipfs/${cleanHash}`
       showToast.success(
         'AI Image Uploaded to IPFS!',
-        `IPFS Link: ${ipfsURL}`
+        `Image Link: ${gatewayURL}`
       )
       
     } catch (error) {
@@ -368,19 +371,21 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                   <div className="p-3 bg-muted/50 rounded-lg border">
                     <div className="flex items-center gap-2 mb-2">
                       <Cloud className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">IPFS Link:</span>
+                      <span className="text-sm font-medium">Image Link:</span>
                     </div>
-                    <p className="text-xs font-mono text-muted-foreground break-all">
-                      {formData.imageURI}
-                    </p>
-                    <a 
-                      href={`https://ipfs.io/ipfs/${formData.imageURI.replace('ipfs://', '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline mt-1 inline-block"
-                    >
-                      View on IPFS Gateway →
-                    </a>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground break-all bg-muted/30 p-1 rounded">
+                        https://ipfs.io/ipfs/{formData.imageURI.replace('ipfs://', '')}
+                      </p>
+                      <a 
+                        href={`https://ipfs.io/ipfs/${formData.imageURI.replace('ipfs://', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline inline-block"
+                      >
+                        🔗 View Image →
+                      </a>
+                    </div>
                   </div>
                 )}
                 
