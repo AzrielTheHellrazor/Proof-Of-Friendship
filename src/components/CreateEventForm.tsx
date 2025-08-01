@@ -4,18 +4,20 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 import Image from 'next/image'
-import { ImageIcon, Loader2, CheckCircle, Sparkles, Wand2, Upload } from 'lucide-react'
+import { ImageIcon, Loader2, CheckCircle, Sparkles, Cloud } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
 import { useCreateEvent } from '@/hooks/useContract'
 import { CONTRACTS } from '@/lib/contracts'
 import { processImageUrl, handleImageError } from '@/lib/image-utils'
 import { showToast } from '@/components/ui/toast'
+import { upload } from 'thirdweb/storage'
+import { clientSideClient } from '@/lib/thirdweb-server'
 
 interface CreateEventFormProps {
   onSuccess?: (eventAddress: string) => void
@@ -29,8 +31,8 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [activeTab, setActiveTab] = useState('manual')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [isUploadingToIPFS, setIsUploadingToIPFS] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   
   const { isConnected, address } = useAccount()
@@ -78,6 +80,53 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     }
     
     createEvent(formData.name, formData.description, formData.imageURI)
+  }
+
+  const handleIPFSUpload = async () => {
+    if (!imagePreview || !imagePreview.startsWith('data:')) {
+      showToast.error('No AI Image Found', 'Please generate an AI image first.')
+      return
+    }
+
+    setIsUploadingToIPFS(true)
+    
+    try {
+      // Convert data URI to File object
+      const response = await fetch(imagePreview)
+      const blob = await response.blob()
+      const file = new File([blob], 'ai-generated-image.png', { type: 'image/png' })
+
+      const uploadedURI = await upload({
+        client: clientSideClient,
+        files: [file],
+      })
+
+      // Clean the uploaded URI to get just the hash
+      const cleanHash = uploadedURI.replace('ipfs://', '')
+      const ipfsURL = `ipfs://${cleanHash}`
+      
+      // Update form data with IPFS URL
+      setFormData(prev => ({ ...prev, imageURI: ipfsURL }))
+      
+      // Clear any previous imageURI errors
+      setErrors(prev => ({ ...prev, imageURI: '' }))
+      
+      // Show success toast with gateway link
+      const gatewayURL = `https://ipfs.io/ipfs/${cleanHash}`
+      showToast.success(
+        'AI Image Uploaded to IPFS!',
+        `Image Link: ${gatewayURL}`
+      )
+      
+    } catch (error) {
+      console.error("IPFS upload error:", error)
+      showToast.error(
+        'IPFS Upload Failed',
+        'Unable to upload AI image to IPFS. Please try again.'
+      )
+    } finally {
+      setIsUploadingToIPFS(false)
+    }
   }
 
   const handleGenerateImage = async () => {
@@ -160,18 +209,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
-    }
-    
-    // Update preview for manual URL changes
-    if (field === 'imageURI' && value) {
-      const processedUrl = processImageUrl(value)
-      if (processedUrl !== value) {
-        setImagePreview(processedUrl)
-      } else {
-        setImagePreview(value)
-      }
-    } else if (field === 'imageURI' && !value) {
-      setImagePreview(null)
     }
   }
 
@@ -281,73 +318,40 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
           <div className="space-y-4">
             <Label>Event Image*</Label>
             
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="manual" className="flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  Manual URL
-                </TabsTrigger>
-                <TabsTrigger value="ai" className="flex items-center gap-2">
-                  <Wand2 className="w-4 h-4" />
-                  AI Generate
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="manual" className="mt-4 space-y-3">
+            {!imagePreview && !formData.imageURI && (
+              <div className="text-center p-6 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                 <div className="space-y-2">
-                  <Input
-                    id="imageURI"
-                    value={formData.imageURI}
-                    onChange={(e) => handleInputChange('imageURI', e.target.value)}
-                    placeholder="https://example.com/image.jpg or ipfs://..."
-                    className={errors.imageURI ? 'border-red-500' : ''}
-                  />
-                  {errors.imageURI && (
-                    <p className="text-sm text-red-500">{errors.imageURI}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Paste any image URL (HTTP, HTTPS, IPFS, etc.) or data URI
+                  <h4 className="font-medium">Generate with AI</h4>
+                  <p className="text-sm text-muted-foreground">
+                    AI will create a custom image based on your event name and description
                   </p>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="ai" className="mt-4 space-y-3">
-                {!imagePreview && !formData.imageURI && (
-                  <div className="text-center p-6 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-                    <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Generate with AI</h4>
-                      <p className="text-sm text-muted-foreground">
-                        AI will create a custom image based on your event name and description
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={handleGenerateImage}
-                      disabled={isGeneratingImage || !formData.name.trim() || !formData.description.trim()}
-                      className="mt-4"
-                    >
-                      {isGeneratingImage ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          Generate Image
-                        </>
-                      )}
-                    </Button>
-                    {(!formData.name.trim() || !formData.description.trim()) && (
-                      <p className="text-xs text-amber-600 mt-2">
-                        Please fill in event name and description first
-                      </p>
-                    )}
-                  </div>
+                <Button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage || !formData.name.trim() || !formData.description.trim()}
+                  className="mt-4"
+                >
+                  {isGeneratingImage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Image
+                    </>
+                  )}
+                </Button>
+                {(!formData.name.trim() || !formData.description.trim()) && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Please fill in event name and description first
+                  </p>
                 )}
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
 
             {/* Image Preview */}
             {(imagePreview || formData.imageURI) && (
@@ -361,31 +365,74 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                     onError={handleImageError}
                   />
                 </div>
+                
+                {/* IPFS Link Display */}
+                {formData.imageURI.startsWith('ipfs://') && (
+                  <div className="p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Cloud className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Image Link:</span>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-mono text-muted-foreground break-all bg-muted/30 p-1 rounded">
+                        https://ipfs.io/ipfs/{formData.imageURI.replace('ipfs://', '')}
+                      </p>
+                      <a 
+                        href={`https://ipfs.io/ipfs/${formData.imageURI.replace('ipfs://', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline inline-block"
+                      >
+                        🔗 View Image →
+                      </a>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setImagePreview(null)
-                      setFormData(prev => ({ ...prev, imageURI: '' }))
-                      setErrors(prev => ({ ...prev, imageURI: '' }))
-                    }}
+                    onClick={handleIPFSUpload}
+                    disabled={isUploadingToIPFS || !imagePreview?.startsWith('data:') || formData.imageURI.startsWith('ipfs://')}
                   >
-                    Clear Image
+                    {isUploadingToIPFS ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : formData.imageURI.startsWith('ipfs://') ? (
+                      <>
+                        <Cloud className="w-4 h-4 mr-1" />
+                        Already on IPFS
+                      </>
+                    ) : (
+                      <>
+                        <Cloud className="w-4 h-4 mr-1" />
+                        Upload AI Image to IPFS
+                      </>
+                    )}
                   </Button>
-                  {activeTab === 'ai' && imagePreview && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateImage}
-                      disabled={isGeneratingImage}
-                    >
-                      <Sparkles className="w-4 h-4 mr-1" />
-                      Generate New
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateImage}
+                    disabled={isGeneratingImage}
+                  >
+                    {isGeneratingImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        Generate New
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             )}
@@ -410,23 +457,45 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
             </AlertDescription>
           </Alert>
 
-          {/* AI Info */}
+          {/* Image Options Info */}
           <Alert>
             <Sparkles className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-1">
-                <p className="font-medium">✨ AI Image Generation Available</p>
-                <p className="text-sm">Generate custom event images using AI, or paste any image URL (HTTP, IPFS, data URI)</p>
+                <p className="font-medium">🎨 AI Image Generation</p>
+                <p className="text-sm">Generate custom images with AI and optionally upload them to IPFS for permanent storage</p>
               </div>
             </AlertDescription>
           </Alert>
 
           {/* Submit Button */}
-          <Button 
-            type="submit" 
-            className="w-full" 
+          <Button
+            type="submit"
+            className="w-full"
             disabled={isPending}
             size="lg"
+            onClick={async (e) => {
+              e.preventDefault();
+              if (isPending) return;
+              // Send call to Router contract to create an event contract
+              if (!isConnected) {
+                showToast.error('Wallet not connected', 'Please connect your wallet.');
+                return;
+              }
+              if (!validateForm()) {
+                return;
+              }
+              try {
+                await createEvent(formData.name, formData.description, formData.imageURI);
+                // If successful, call onSuccess callback
+                if (onSuccess && hash) {
+                  onSuccess(hash);
+                }
+              } catch (err) {
+                const errorMessage = (err as { message?: string })?.message || 'An error occurred.';
+                showToast.error('Failed to create event', errorMessage);
+              }
+            }}
           >
             {isPending ? (
               <>
