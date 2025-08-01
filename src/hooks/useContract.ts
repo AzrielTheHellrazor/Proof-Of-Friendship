@@ -1,69 +1,124 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import contractAbi from '@/lib/contract-abi.json'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import routerAbi from '@/lib/router-abi.json'
+import eventNftAbi from '@/lib/event-nft-abi.json'
+import { getContractAddress, isChainSupported, CONTRACTS, type Event, type EventToken, type ContractAddress } from '@/lib/contracts'
 
-// Contract address - you'll need to deploy and update this
-// For now, using a placeholder address
-const CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000' as const
+// ========== ROUTER CONTRACT HOOKS ==========
 
-export function useProofOfFriendshipContract() {
+export function useProofOfFriendshipRouter() {
+  const chainId = useChainId()
+  const address = getContractAddress(chainId)
+  
   return {
-    address: CONTRACT_ADDRESS,
-    abi: contractAbi as any,
+    address: address as ContractAddress,
+    abi: routerAbi,
+    isSupported: isChainSupported(chainId),
+    chainId,
   }
 }
 
-export function useGetAllEvents() {
-  const { address, abi } = useProofOfFriendshipContract()
+// Get all event NFT contracts
+export function useGetAllEventNFTs() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
   
   return useReadContract({
     address,
     abi,
-    functionName: 'getAllEvents',
+    functionName: 'getAllEventNFTs',
     query: {
-      enabled: address !== '0x0000000000000000000000000000000000000000',
+      enabled: isSupported && !!address,
     },
   })
 }
 
-export function useGetEvent(eventId: number) {
-  const { address, abi } = useProofOfFriendshipContract()
+// Get event metadata
+export function useGetEventMetadata(eventNFTAddress?: string) {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
   
   return useReadContract({
     address,
     abi,
-    functionName: 'getEvent',
-    args: [BigInt(eventId)],
+    functionName: 'getEventMetadata',
+    args: eventNFTAddress ? [eventNFTAddress as ContractAddress] : undefined,
     query: {
-      enabled: eventId >= 0 && address !== '0x0000000000000000000000000000000000000000',
+      enabled: isSupported && !!address && !!eventNFTAddress,
     },
   })
 }
 
-export function useMintForEvent() {
-  const { address, abi } = useProofOfFriendshipContract()
+// Get friendship points between two users
+export function useGetFriendshipPoints(userA?: string, userB?: string) {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
   
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'getFriendshipPoints',
+    args: userA && userB ? [userA as ContractAddress, userB as ContractAddress] : undefined,
+    query: {
+      enabled: isSupported && !!address && !!userA && !!userB && userA !== userB,
+    },
+  })
+}
+
+// Get NFT holders for a specific token
+export function useGetNFTHolders(eventNFTAddress?: string, tokenId?: number) {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'getNFTHolders',
+    args: eventNFTAddress && tokenId !== undefined 
+      ? [eventNFTAddress as ContractAddress, BigInt(tokenId)] 
+      : undefined,
+    query: {
+      enabled: isSupported && !!address && !!eventNFTAddress && tokenId !== undefined,
+    },
+  })
+}
+
+// Check if user has minted specific NFT
+export function useHasUserMintedNFT(eventNFTAddress?: string, tokenId?: number, userAddress?: string) {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'hasUserMintedNFT',
+    args: eventNFTAddress && tokenId !== undefined && userAddress
+      ? [eventNFTAddress as ContractAddress, BigInt(tokenId), userAddress as ContractAddress]
+      : undefined,
+    query: {
+      enabled: isSupported && !!address && !!eventNFTAddress && tokenId !== undefined && !!userAddress,
+    },
+  })
+}
+
+// ========== WRITE FUNCTIONS ==========
+
+// Create new event
+export function useCreateEvent() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
   const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash: data,
-  })
-
-  const mintForEvent = (eventId: number) => {
-    if (address === '0x0000000000000000000000000000000000000000') {
-      console.warn('Contract not deployed yet')
+  const createEvent = (name: string, description: string, imageURI: string) => {
+    if (!isSupported || !address) {
+      console.warn('Contract not available on this network')
       return
     }
     
     writeContract({
       address,
       abi,
-      functionName: 'mintForEvent',
-      args: [BigInt(eventId)],
+      functionName: 'createEvent',
+      args: [name, description, imageURI],
     })
   }
 
   return {
-    mintForEvent,
+    createEvent,
     isPending: isPending || isConfirming,
     isSuccess,
     error,
@@ -71,32 +126,110 @@ export function useMintForEvent() {
   }
 }
 
-export function useCountEventsAttended(userAddress?: string) {
-  const { address, abi } = useProofOfFriendshipContract()
+// Mint NFT and earn friendship points
+export function useMintNFT() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const mint = (eventNFTAddress: string, tokenId: number) => {
+    if (!isSupported || !address) {
+      console.warn('Contract not available on this network')
+      return
+    }
+    
+    writeContract({
+      address,
+      abi,
+      functionName: 'mint',
+      args: [eventNFTAddress as ContractAddress, BigInt(tokenId)],
+    })
+  }
+
+  return {
+    mint,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+// ========== EVENT NFT CONTRACT HOOKS ==========
+
+export function useEventNFTContract(eventNFTAddress: string) {
+  return {
+    address: eventNFTAddress as ContractAddress,
+    abi: eventNftAbi,
+  }
+}
+
+// Get token info from EventNFT
+export function useGetTokenInfo(eventNFTAddress?: string, tokenId?: number) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
   
   return useReadContract({
     address,
     abi,
-    functionName: 'countEventsAttended',
-    args: userAddress ? [userAddress as `0x${string}`] : undefined,
+    functionName: 'getTokenInfo',
+    args: tokenId !== undefined ? [BigInt(tokenId)] : undefined,
     query: {
-      enabled: !!userAddress && address !== '0x0000000000000000000000000000000000000000',
+      enabled: !!eventNFTAddress && tokenId !== undefined,
     },
   })
 }
 
-export function useHasUserMintedForEvent(userAddress?: string, eventId?: number) {
-  const { address, abi } = useProofOfFriendshipContract()
+// Get all created tokens from an EventNFT
+export function useGetCreatedTokens(eventNFTAddress?: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
   
   return useReadContract({
     address,
     abi,
-    functionName: 'hasUserMintedForEvent',
-    args: userAddress && eventId !== undefined 
-      ? [userAddress as `0x${string}`, BigInt(eventId)] 
-      : undefined,
+    functionName: 'getCreatedTokens',
     query: {
-      enabled: !!userAddress && eventId !== undefined && address !== '0x0000000000000000000000000000000000000000',
+      enabled: !!eventNFTAddress,
     },
   })
+}
+
+// Check if user holds a specific token
+export function useHoldsToken(eventNFTAddress?: string, userAddress?: string, tokenId?: number) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'holdsToken',
+    args: userAddress && tokenId !== undefined 
+      ? [userAddress as ContractAddress, BigInt(tokenId)]
+      : undefined,
+    query: {
+      enabled: !!eventNFTAddress && !!userAddress && tokenId !== undefined,
+    },
+  })
+}
+
+// Create token in EventNFT (only for event creator)
+export function useCreateToken(eventNFTAddress: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress)
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const createToken = (tokenId: number, maxSupply: number, uri: string, description: string) => {
+    writeContract({
+      address,
+      abi,
+      functionName: 'createToken',
+      args: [BigInt(tokenId), BigInt(maxSupply), uri, description],
+    })
+  }
+
+  return {
+    createToken,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
 } 

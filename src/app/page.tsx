@@ -1,89 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import { motion } from 'framer-motion';
-import { Wallet, Users, Calendar, Trophy, Star, Heart, ArrowRight, ChevronRight, Sparkles } from 'lucide-react';
-import { useAccount, useConnect } from 'wagmi';
+import { Users, Calendar, Trophy, Heart, Plus } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import Link from 'next/link';
-import Image from 'next/image';
 
 // Shadcn Components
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { showToast } from '@/components/ui/toast';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-// Mock events data
-const mockEvents = [
-  {
-    id: 0,
-    name: "Summer BBQ Party",
-    description: "A fun summer barbecue with friends and family",
-    imageURI: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop",
-    totalMinted: 12,
-    date: "2024-07-15",
-    category: "Social"
-  },
-  {
-    id: 1,
-    name: "Game Night",
-    description: "Board games and pizza night with the crew",
-    imageURI: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop",
-    totalMinted: 8,
-    date: "2024-07-20",
-    category: "Gaming"
-  },
-  {
-    id: 2,
-    name: "Beach Day",
-    description: "Sun, sand, and waves with close friends",
-    imageURI: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop",
-    totalMinted: 15,
-    date: "2024-07-25",
-    category: "Outdoor"
-  }
-];
+// Custom Components
+import EventsList from '@/components/EventsList';
+import FriendshipStats from '@/components/FriendshipStats';
+import WalletConnect from '@/components/WalletConnect';
+import { CONTRACTS } from '@/lib/contracts';
+
+// Remove mock data - using real contract data now
 
 
 
 export default function Home() {
-  const { address, isConnected } = useAccount();
-  const { connectors, connect, isPending: isConnecting } = useConnect();
+  const { isConnected } = useAccount();
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
-
-  const userEventCount = 0; // Mock data
-  const events = mockEvents;
+  const [activeTab, setActiveTab] = useState("events");
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (isConnected) {
-      showToast.success("Wallet Connected!", "You can now create NFTs and store your event memories.");
-    }
-  }, [isConnected]);
-
-  const handleConnectWallet = async () => {
-    try {
-      if (connectors.length > 0) {
-        await connect({ connector: connectors[0] });
-        showToast.info("Connecting...", "Please approve the transaction in your wallet.");
-      }
-    } catch {
-      showToast.error("Connection Failed", "Failed to connect wallet. Please try again.");
-    }
-  };
-
-  const filteredEvents = activeTab === "all" 
-    ? events 
-    : events.filter(event => event.category.toLowerCase() === activeTab);
 
   if (isLoading) {
     return (
@@ -106,45 +53,25 @@ export default function Home() {
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Heart className="h-6 w-6" />
             </div>
-            <h1 className="text-xl font-bold">Proof of Friendship</h1>
+            <div>
+              <h1 className="text-xl font-bold">Proof of Friendship</h1>
+              <p className="text-xs text-muted-foreground">On {CONTRACTS.NETWORK.name}</p>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            {isConnected ? (
-              <div className="flex items-center space-x-3">
-                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                  Connected
-                </Badge>
-                <Badge variant="outline" className="font-mono text-xs">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
-                </Badge>
-              </div>
-            ) : (
-              <Button onClick={handleConnectWallet} disabled={isConnecting}>
-                {isConnecting ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Wallet className="mr-2 h-4 w-4" />
-                    Connect Wallet
-                  </>
-                )}
-              </Button>
-            )}
+            <WalletConnect />
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-16">
+      <main className="container mx-auto px-4 py-8 space-y-12">
         {/* Hero Section */}
         <section className="text-center space-y-8">
           <div className="space-y-6">
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-8">
-              <Sparkles className="h-10 w-10 text-primary-foreground" />
+              <Heart className="h-10 w-10 text-primary-foreground" />
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
@@ -155,146 +82,119 @@ export default function Home() {
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Transform your social experiences into unique NFTs and preserve your friendship moments on the blockchain forever. 
-              Connect, create, and collect memories that last a lifetime.
+              Transform your social experiences into unique NFTs and earn friendship points. 
+              Connect, create, and collect memories that strengthen your bonds forever.
             </p>
 
-            <div className="flex justify-center">
-              <Button asChild size="lg" className="text-lg px-8 active:scale-100 hover:scale-100">
-                <Link href="/create">
-                  Create NFT
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+            <div className="flex justify-center gap-4">
+              <Link href="/create">
+                <Button size="lg" className="text-lg px-8">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Create Event
+                </Button>
+              </Link>
+              {isConnected && (
+                <Button variant="outline" size="lg" onClick={() => setActiveTab("stats")}>
+                  <Users className="mr-2 h-5 w-5" />
+                  View Stats
+                </Button>
+              )}
             </div>
           </div>
         </section>
 
-        {/* Demo Alert */}
+        {/* Contract Info */}
         <Alert>
-          <Sparkles className="h-4 w-4" />
+          <Heart className="h-4 w-4" />
           <AlertDescription>
-            <strong>Demo Mode:</strong> This is a demonstration version. Connect your wallet to experience the full functionality.
+            <div className="flex items-center justify-between">
+              <span>
+                <strong>Live on {CONTRACTS.NETWORK.name}!</strong> Smart contract deployed and ready for friendship NFTs.
+              </span>
+              <code className="text-xs bg-muted px-2 py-1 rounded">
+                {CONTRACTS.ROUTER.address.slice(0, 8)}...{CONTRACTS.ROUTER.address.slice(-6)}
+              </code>
+            </div>
           </AlertDescription>
         </Alert>
 
-        {/* User Stats */}
-        {isConnected && (
-          <section className="space-y-8">
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold">Your Statistics</h2>
-              <p className="text-muted-foreground">Track your journey on the blockchain</p>
-            </div>
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="events" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Events
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              My Stats
+            </TabsTrigger>
+          </TabsList>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Events Attended</CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{userEventCount}</div>
-                  <p className="text-xs text-muted-foreground">+20% from last month</p>
-                  <Progress value={75} className="mt-2" />
-                </CardContent>
-              </Card>
+          <TabsContent value="events" className="mt-8">
+            <EventsList />
+          </TabsContent>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Available Events</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{events.length}</div>
-                  <p className="text-xs text-muted-foreground">+12% from last month</p>
-                  <Progress value={60} className="mt-2" />
-                </CardContent>
-              </Card>
+          <TabsContent value="stats" className="mt-8">
+            <FriendshipStats />
+          </TabsContent>
+        </Tabs>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total NFTs</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{events.reduce((acc, event) => acc + event.totalMinted, 0)}</div>
-                  <p className="text-xs text-muted-foreground">+25% from last month</p>
-                  <Progress value={85} className="mt-2" />
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-        )}
-
-
-
-        {/* Events Section */}
+        {/* How It Works Section */}
         <section className="space-y-8">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Available Events</h2>
-            <p className="text-muted-foreground">
-              Transform your friendship moments into digital collectibles
+            <h2 className="text-3xl font-bold">How It Works</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Simple steps to create lasting friendship memories on the blockchain
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All Events</TabsTrigger>
-              <TabsTrigger value="social">Social</TabsTrigger>
-              <TabsTrigger value="gaming">Gaming</TabsTrigger>
-              <TabsTrigger value="outdoor">Outdoor</TabsTrigger>
-            </TabsList>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Plus className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Create Event</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Create a new friendship event with name, description, and image. Each event gets its own ERC1155 NFT contract.
+                </p>
+              </CardContent>
+            </Card>
 
-            <TabsContent value={activeTab} className="mt-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event) => (
-                  <div key={event.id}>
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="relative">
-                        <Image 
-                          src={event.imageURI} 
-                          alt={event.name}
-                          width={400}
-                          height={200}
-                          className="w-full h-48 object-cover"
-                        />
-                        <Badge className="absolute top-2 right-2">
-                          {event.totalMinted} minted
-                        </Badge>
-                      </div>
-                      
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{event.name}</CardTitle>
-                          <Badge variant="outline">{event.category}</Badge>
-                        </div>
-                        <CardDescription>{event.description}</CardDescription>
-                      </CardHeader>
-                      
-                      <CardContent>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            <span>{new Date(event.date).toLocaleDateString()}</span>
-                          </div>
-                          <Button asChild size="sm">
-                            <Link href={`/events/${event.id}`}>
-                              View Event
-                              <ChevronRight className="ml-1 h-4 w-4" />
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Heart className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Mint NFTs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Mint NFTs from events to show participation. Each user can mint only 1 NFT per event token to keep it special.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <Trophy className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Earn Points</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Earn +{CONTRACTS.POINTS_PER_INTERACTION} friendship points with each friend who already minted the same NFT. Build lasting connections!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </section>
 
       </main>
-
     </div>
   );
 }
