@@ -41,10 +41,14 @@ export default function CreateEventPage() {
 
           {/* Contract Info */}
           <div className="text-center p-4 bg-muted/50 rounded-lg border">
-            <p className="text-sm text-muted-foreground">
-              <strong>Network:</strong> {CONTRACTS.NETWORK.name} | 
-              <strong> Router:</strong> {CONTRACTS.ROUTER.address.slice(0, 8)}...{CONTRACTS.ROUTER.address.slice(-6)}
-            </p>
+            <div className="text-sm text-muted-foreground flex flex-row items-center justify-center gap-8">
+              <div>
+                <strong>Network:</strong> {CONTRACTS.NETWORK.name}
+              </div>
+              <div>
+                <strong>Router:</strong> {CONTRACTS.ROUTER.address}
+              </div>
+            </div>
           </div>
 
           {/* Creation Form */}

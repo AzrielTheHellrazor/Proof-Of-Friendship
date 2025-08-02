@@ -340,7 +340,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2" />
                       Generate Image
                     </>
                   )}
@@ -461,16 +460,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Network Info */}
-          <Alert>
-            <AlertDescription>
-              <div className="flex items-center justify-between text-sm">
-                <span>Deploying on {CONTRACTS.NETWORK.name}</span>
-                <span>Contract: <code className="text-xs">{CONTRACTS.ROUTER.address}</code></span>
-              </div>
-            </AlertDescription>
-          </Alert>
 
           {/* Submit Button */}
           <div className="flex justify-center">
