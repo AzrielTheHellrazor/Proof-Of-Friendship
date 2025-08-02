@@ -103,21 +103,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Contract Info */}
-        <Alert>
-          <Heart className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>
-                <strong>Live on {CONTRACTS.NETWORK.name}!</strong> Smart contract deployed and ready for friendship NFTs.
-              </span>
-              <code className="text-xs bg-muted px-2 py-1 rounded">
-                {CONTRACTS.ROUTER.address.slice(0, 8)}...{CONTRACTS.ROUTER.address.slice(-6)}
-              </code>
-            </div>
-          </AlertDescription>
-        </Alert>
-
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">

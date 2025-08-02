@@ -93,7 +93,6 @@ function EventCard({ eventAddress, index }: EventCardProps) {
             <Link href={`/events/${eventAddress}`}>
               <Button size="sm" className="gap-2">
                 <span>View Event</span>
-                <ExternalLink className="w-4 h-4" />
               </Button>
             </Link>
             
