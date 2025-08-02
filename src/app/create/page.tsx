@@ -17,10 +17,13 @@ export default function CreateEventPage() {
         {/* Header */}
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" asChild>
-              <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
+            <Button
+              asChild
+              className="bg-primary text-white shadow-md hover:bg-primary/90 font-semibold px-4 py-2"
+            >
+              <Link href="/" className="flex items-center">
+                <ArrowLeft className="mr-2 h-5 w-5" />
+                <span className="align-middle">Back to Home</span>
               </Link>
             </Button>
           </div>

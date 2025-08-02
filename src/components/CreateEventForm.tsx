@@ -274,7 +274,7 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-center">
         <CardTitle>Create Friendship Event</CardTitle>
         <CardDescription>
           Create a new event where friends can mint NFTs and earn friendship points together
@@ -290,7 +290,7 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="e.g., Summer BBQ Party"
+              placeholder="Event Name"
               className={errors.name ? 'border-red-500' : ''}
             />
             {errors.name && (
@@ -356,16 +356,32 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
             {/* Image Preview */}
             {(imagePreview || formData.imageURI) && (
               <div className="space-y-3">
-                <div className="relative w-full h-96 border rounded-lg overflow-hidden bg-gradient-to-br from-muted/20 to-muted/40">
+                <div
+                  className="relative w-full border rounded-lg overflow-hidden bg-gradient-to-br from-muted/20 to-muted/40"
+                  style={{
+                    aspectRatio: '4 / 3',
+                    minHeight: '24rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
                   <Image
                     src={imagePreview || processImageUrl(formData.imageURI)}
                     alt="Event image preview"
                     fill
                     className="object-cover"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                      aspectRatio: '4 / 3',
+                    }}
                     onError={handleImageError}
                   />
                 </div>
-                
+
                 {/* IPFS Link Display */}
                 {formData.imageURI.startsWith('ipfs://') && (
                   <div className="p-3 bg-muted/50 rounded-lg border">
@@ -388,8 +404,9 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                     </div>
                   </div>
                 )}
-                
-                <div className="flex gap-2 items-center">
+
+                {/* Centered Buttons */}
+                <div className="flex gap-2 items-center justify-center">
                   <Button
                     type="button"
                     variant="outline"
@@ -409,7 +426,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                       </>
                     ) : (
                       <>
-                        <Cloud className="w-4 h-4 mr-1" />
                         Upload AI Image to IPFS
                       </>
                     )}
@@ -428,7 +444,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 mr-1" />
                         Generate New
                       </>
                     )}
@@ -451,68 +466,54 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
           <Alert>
             <AlertDescription>
               <div className="flex items-center justify-between text-sm">
-                <span>Deploying on: <strong>{CONTRACTS.NETWORK.name}</strong></span>
+                <span>Deploying on {CONTRACTS.NETWORK.name}</span>
                 <span>Contract: <code className="text-xs">{CONTRACTS.ROUTER.address}</code></span>
               </div>
             </AlertDescription>
           </Alert>
 
-          {/* Image Options Info */}
-          <Alert>
-            <Sparkles className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-1">
-                <p className="font-medium">🎨 AI Image Generation</p>
-                <p className="text-sm">Generate custom images with AI and optionally upload them to IPFS for permanent storage</p>
-              </div>
-            </AlertDescription>
-          </Alert>
-
           {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isPending}
-            size="lg"
-            onClick={async (e) => {
-              e.preventDefault();
-              if (isPending) return;
-              // Send call to Router contract to create an event contract
-              if (!isConnected) {
-                showToast.error('Wallet not connected', 'Please connect your wallet.');
-                return;
-              }
-              if (!validateForm()) {
-                return;
-              }
-              try {
-                await createEvent(formData.name, formData.description, formData.imageURI);
-                // If successful, call onSuccess callback
-                if (onSuccess && hash) {
-                  onSuccess(hash);
+          <div className="flex justify-center">
+            <Button
+              type="submit"
+              className="w-32 h-12 text-base font-semibold"
+              disabled={isPending}
+              size="lg"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (isPending) return;
+                // Send call to Router contract to create an event contract
+                if (!isConnected) {
+                  showToast.error('Wallet not connected', 'Please connect your wallet.');
+                  return;
                 }
-              } catch (err) {
-                const errorMessage = (err as { message?: string })?.message || 'An error occurred.';
-                showToast.error('Failed to create event', errorMessage);
-              }
-            }}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating Event...
-              </>
-            ) : (
-              <>
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Create Event
-              </>
-            )}
-          </Button>
-          
-          <p className="text-xs text-muted-foreground text-center">
-            Creating an event will deploy a new ERC1155 contract for your event NFTs
-          </p>
+                if (!validateForm()) {
+                  return;
+                }
+                try {
+                  await createEvent(formData.name, formData.description, formData.imageURI);
+                  // If successful, call onSuccess callback
+                  if (onSuccess && hash) {
+                    onSuccess(hash);
+                  }
+                } catch (err) {
+                  const errorMessage = (err as { message?: string })?.message || 'An error occurred.';
+                  showToast.error('Failed to create event', errorMessage);
+                }
+              }}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Event...
+                </>
+              ) : (
+                <>
+                  Create Event
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
