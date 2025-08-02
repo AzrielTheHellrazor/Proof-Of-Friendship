@@ -389,7 +389,7 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
                   </div>
                 )}
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Button
                     type="button"
                     variant="outline"
