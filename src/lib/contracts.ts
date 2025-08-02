@@ -2,7 +2,7 @@
 export const CONTRACTS = {
   // Main Router Contract (Base Mainnet)
   ROUTER: {
-    address: '0x869B768E940A0DB225559188c9C475F387174d63' as const,
+    address: '0xc11f9d62FC020C0169576edbdD357335B207a866' as const,
     chainId: 8453, // Base Mainnet
     network: 'base',
     blockExplorer: 'https://basescan.org'

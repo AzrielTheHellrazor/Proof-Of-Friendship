@@ -60,6 +60,13 @@ export default function Home() {
           </div>
 
           <div className="flex items-center space-x-4">
+            {isConnected && (
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  Dashboard
+                </Button>
+              </Link>
+            )}
             <ThemeToggle />
             <WalletConnect />
           </div>

@@ -96,21 +96,21 @@ contract ProofOfFriendshipRouter is Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev Mints exactly 1 NFT and updates friendship points - ONLY way to mint NFTs
+     * @dev Mints exactly 1 event NFT and updates friendship points - ONLY way to mint NFTs
      * @param eventNFT Address of the EventNFT contract
-     * @param tokenId Token ID to mint (represents specific moment/photo from event)
      */
     function mint(
-        address eventNFT,
-        uint256 tokenId
+        address eventNFT
     ) external nonReentrant {
         require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
         
         // Get current holders of this specific NFT before minting
         address[] memory currentHolders = nftHolders[eventNFT][tokenId];
         
         // Mint exactly 1 NFT through the EventNFT contract
-        EventNFT(eventNFT).mint(msg.sender, tokenId);
+        EventNFT(eventNFT).mint(msg.sender);
         
         // Add to holders tracking (user now holds this token)
         nftHolders[eventNFT][tokenId].push(msg.sender);
@@ -255,5 +255,70 @@ contract ProofOfFriendshipRouter is Ownable, ReentrancyGuard {
     function unpauseEventNFT(address eventNFT) external onlyOwner {
         require(isEventNFT[eventNFT], "Invalid event NFT contract");
         EventNFT(eventNFT).unpause();
+    }
+    
+    /**
+     * @dev Adds addresses to whitelist for an event NFT (convenience function)
+     * @param eventNFT Address of the EventNFT contract
+     * @param addresses Array of addresses to add to whitelist
+     */
+    function addToWhitelist(
+        address eventNFT,
+        address[] calldata addresses
+    ) external {
+        require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        EventNFT(eventNFT).addToWhitelist(addresses);
+    }
+    
+    /**
+     * @dev Removes addresses from whitelist for an event NFT (convenience function)
+     * @param eventNFT Address of the EventNFT contract
+     * @param addresses Array of addresses to remove from whitelist
+     */
+    function removeFromWhitelist(
+        address eventNFT,
+        address[] calldata addresses
+    ) external {
+        require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        EventNFT(eventNFT).removeFromWhitelist(addresses);
+    }
+    
+    /**
+     * @dev Sets whitelist status for an event NFT (convenience function)
+     * @param eventNFT Address of the EventNFT contract
+     * @param enabled Whether whitelist should be enabled
+     */
+    function setWhitelistEnabled(
+        address eventNFT,
+        bool enabled
+    ) external {
+        require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        EventNFT(eventNFT).setWhitelistEnabled(enabled);
+    }
+    
+    /**
+     * @dev Checks if user is whitelisted for an event (convenience function)
+     * @param eventNFT Address of the EventNFT contract
+     * @param user Address to check
+     */
+    function isUserWhitelisted(
+        address eventNFT,
+        address user
+    ) external view returns (bool) {
+        require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        return EventNFT(eventNFT).isUserWhitelisted(user);
+    }
+    
+    /**
+     * @dev Checks if user can mint an event token (convenience function)
+     * @param eventNFT Address of the EventNFT contract
+     * @param user Address to check
+     */
+    function canUserMintEvent(
+        address eventNFT,
+        address user
+    ) external view returns (bool canMint, string memory reason) {
+        require(isEventNFT[eventNFT], "Invalid event NFT contract");
+        return EventNFT(eventNFT).canUserMintEvent(user);
     }
 }

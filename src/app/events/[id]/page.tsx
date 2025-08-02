@@ -11,50 +11,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { showToast } from '@/components/ui/toast';
 import { CardSkeleton } from '@/components/ui/loading-skeleton';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useGetEvent, useMintForEvent, useHasUserMintedForEvent } from '@/hooks/useContract';
+import { useGetEventMetadata, useMintNFT, useHasUserMintedNFT, useCanUserMintEvent, useGetEventTokenInfo } from '@/hooks/useContract';
 import Link from 'next/link';
 
-// Mock events for testing (replace with contract data)
-const mockEvents = [
-  {
-    id: 0,
-    name: "Summer BBQ Party",
-    description: "A fun summer barbecue with friends and family. We grilled burgers, played games, and enjoyed the beautiful weather together. This event was filled with laughter, good food, and great memories that we'll cherish forever.",
-    imageURI: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&h=400&fit=crop",
-    totalMinted: 12,
-    date: "2024-07-15",
-    location: "Central Park, NYC"
-  },
-  {
-    id: 1,
-    name: "Game Night",
-    description: "Board games and pizza night with the crew. We played everything from classic Monopoly to modern strategy games. The competition was fierce but friendly, and we discovered some hidden talents among our friends.",
-    imageURI: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=400&fit=crop",
-    totalMinted: 8,
-    date: "2024-07-20",
-    location: "Friends Apartment"
-  },
-  {
-    id: 2,
-    name: "Beach Day",
-    description: "Sun, sand, and waves with close friends. We spent the day building sandcastles, playing beach volleyball, and enjoying the ocean breeze. The sunset was absolutely magical and made for perfect photo opportunities.",
-    imageURI: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop",
-    totalMinted: 15,
-    date: "2024-07-25",
-    location: "Miami Beach"
-  }
-];
+// Event interface for contract data
+interface EventData {
+  name: string;
+  description: string;
+  imageURI: string;
+  creator: string;
+  createdAt: number;
+  exists: boolean;
+  // Additional fields for display
+  date?: string;
+  location?: string;
+  totalMinted?: number;
+}
 
 export default function EventDetail() {
   const params = useParams();
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const { connectors, connect, isPending: isConnecting } = useConnect();
-  const eventId = parseInt(params.id as string);
-
-  const { data: eventData } = useGetEvent(eventId);
-  const { data: hasMinted } = useHasUserMintedForEvent(address, eventId);
-  const { mintForEvent, isPending, isSuccess, error } = useMintForEvent();
+  
+  // Get event address from URL params
+  const eventAddress = params.id as string;
+  
+  const { data: eventMetadata, isLoading: metadataLoading } = useGetEventMetadata(eventAddress);
+  const { data: tokenInfo } = useGetEventTokenInfo(eventAddress);
+  const { data: hasMinted } = useHasUserMintedNFT(eventAddress, address);
+  const { data: canMintResult } = useCanUserMintEvent(eventAddress, address);
+  const { mint, isPending, isSuccess, error } = useMintNFT();
 
   // Loading and animation states
   const [isLoading, setIsLoading] = useState(true);
@@ -65,17 +52,25 @@ export default function EventDetail() {
   const { ref: heroRef, inView: heroInView } = useInView({ threshold: 0.1, triggerOnce: true });
   const { ref: detailsRef, inView: detailsInView } = useInView({ threshold: 0.1, triggerOnce: true });
 
-  // Use mock data for now
-  const event = mockEvents.find(e => e.id === eventId) || mockEvents[0];
+  // Use contract data and add missing fields
+  const event: EventData = eventMetadata ? {
+    ...eventMetadata,
+    date: new Date(Number(eventMetadata.createdAt) * 1000).toISOString().split('T')[0],
+    location: "Event Location", // This could come from metadata in the future
+    totalMinted: tokenInfo ? Number(tokenInfo.currentSupply) : 0
+  } : {
+    name: "",
+    description: "",
+    imageURI: "",
+    creator: "",
+    createdAt: 0,
+    exists: false
+  };
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
+    // Set loading based on metadata loading
+    setIsLoading(metadataLoading);
+  }, [metadataLoading]);
 
   useEffect(() => {
     if (isSuccess && isMinting) {
@@ -122,7 +117,7 @@ export default function EventDetail() {
     showToast.info("Minting NFT...", "Transaction is being confirmed on the blockchain.");
     
     try {
-      await mintForEvent(eventId);
+      mint(eventAddress);
     } catch (error) {
       setIsMinting(false);
     }
@@ -175,7 +170,7 @@ export default function EventDetail() {
     );
   }
 
-  if (!event) {
+  if (!event || !event.exists) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card variant="modern" className="max-w-md w-full mx-4">
@@ -267,11 +262,16 @@ export default function EventDetail() {
             className="mb-12"
           >
             <Card variant="elevated" className="overflow-hidden">
-              <div className="relative">
+              <div className="relative w-full" style={{ aspectRatio: "4 / 3" }}>
                 <img 
-                  src={event.imageURI} 
+                  src={
+                    event.imageURI && event.imageURI.startsWith("ipfs://")
+                      ? event.imageURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+                      : event.imageURI
+                  }
                   alt={event.name}
-                  className="w-full h-64 lg:h-80 object-cover"
+                  className="absolute inset-0 w-full h-full object-contain bg-white"
+                  style={{ backgroundColor: "#fff" }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 <div className="absolute bottom-8 left-8 right-8">
@@ -291,7 +291,7 @@ export default function EventDetail() {
                   >
                     <div className="flex items-center space-x-2">
                       <Clock className="w-5 h-5" />
-                      <span>{new Date(event.date).toLocaleDateString()}</span>
+                      <span>{event.date}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-5 h-5" />
@@ -387,6 +387,31 @@ export default function EventDetail() {
                         <Share2 className="w-4 h-4 mr-2" />
                         Share Achievement
                       </Button>
+                    </div>
+                  ) : canMintResult && !canMintResult[0] ? (
+                    <div className="text-center space-y-6">
+                      <motion.div 
+                        className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <AlertCircle className="w-10 h-10 text-red-600" />
+                      </motion.div>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                          Cannot Mint
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                          {canMintResult[1] || "You are not eligible to mint this NFT."}
+                        </p>
+                      </div>
+                      {canMintResult[1]?.includes("whitelisted") && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-600 rounded-lg p-4">
+                          <p className="text-amber-800 dark:text-amber-200 text-sm">
+                            This event requires whitelist approval. Contact the event creator to be added to the whitelist.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-6">

@@ -25,6 +25,10 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
     // Track if user already minted this token (1 NFT per user per token)
     mapping(uint256 => mapping(address => bool)) public hasMinted;
     
+    // Whitelist management - per token whitelist
+    mapping(uint256 => mapping(address => bool)) public isWhitelisted;
+    mapping(uint256 => bool) public whitelistEnabled;
+    
     // Token metadata - each tokenId represents different moment/photo from event
     mapping(uint256 => string) public tokenURIs;
     mapping(uint256 => bool) public tokenExists;
@@ -45,6 +49,23 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
         uint256 indexed tokenId,
         uint256 amount,
         address indexed minter
+    );
+    
+    event WhitelistStatusChanged(
+        uint256 indexed tokenId,
+        bool enabled
+    );
+    
+    event UserWhitelisted(
+        uint256 indexed tokenId,
+        address indexed user,
+        address indexed addedBy
+    );
+    
+    event UserRemovedFromWhitelist(
+        uint256 indexed tokenId,
+        address indexed user,
+        address indexed removedBy
     );
     
     /**
@@ -73,19 +94,20 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
     }
     
     /**
-     * @dev Creates a new token type within this event (anyone can create tokens)
-     * @param tokenId Token ID to create
+     * @dev Creates the main event token (only one token per event)
      * @param _maxSupply Maximum supply for this token (0 = unlimited)
      * @param _uri URI for token metadata
-     * @param _description Description of this specific moment/photo
+     * @param _description Description of this event
+     * @param _whitelistEnabled Whether whitelist is enabled for this token
      */
-    function createToken(
-        uint256 tokenId,
+    function createEventToken(
         uint256 _maxSupply,
         string memory _uri,
-        string memory _description
+        string memory _description,
+        bool _whitelistEnabled
     ) external whenNotPaused {
-        require(!tokenExists[tokenId], "Token already exists");
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
+        require(!tokenExists[tokenId], "Event token already exists");
         require(bytes(_uri).length > 0, "URI cannot be empty");
         require(bytes(_description).length > 0, "Description cannot be empty");
         
@@ -94,21 +116,30 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
         tokenURIs[tokenId] = _uri;
         tokenCreator[tokenId] = msg.sender;
         tokenDescription[tokenId] = _description;
+        whitelistEnabled[tokenId] = _whitelistEnabled;
         
         emit TokenCreated(tokenId, msg.sender, _maxSupply, _uri, _description);
+        
+        if (_whitelistEnabled) {
+            emit WhitelistStatusChanged(tokenId, true);
+        }
     }
     
     /**
-     * @dev Mints exactly 1 token - ONLY callable by router
+     * @dev Mints exactly 1 event token - ONLY callable by router
      * @param to Address to mint to
-     * @param tokenId Token ID to mint
      */
     function mint(
-        address to,
-        uint256 tokenId
+        address to
     ) external onlyRouter nonReentrant whenNotPaused {
-        require(tokenExists[tokenId], "Token does not exist");
-        require(!hasMinted[tokenId][to], "User already minted this token");
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
+        require(tokenExists[tokenId], "Event token does not exist");
+        require(!hasMinted[tokenId][to], "User already minted this event token");
+        
+        // Check whitelist if enabled
+        if (whitelistEnabled[tokenId]) {
+            require(isWhitelisted[tokenId][to], "Address not whitelisted for this event");
+        }
         
         // Check max supply (each mint is 1 token)
         if (maxSupply[tokenId] > 0) {
@@ -130,6 +161,61 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
         emit TokenMinted(to, tokenId, 1, tx.origin);
     }
     
+    /**
+     * @dev Adds multiple addresses to whitelist for the event (only event creator or owner)
+     * @param addresses Array of addresses to add to whitelist
+     */
+    function addToWhitelist(address[] calldata addresses) external {
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
+        require(tokenExists[tokenId], "Event token does not exist");
+        require(
+            msg.sender == tokenCreator[tokenId] || msg.sender == owner(),
+            "Not authorized to manage whitelist"
+        );
+        
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (!isWhitelisted[tokenId][addresses[i]]) {
+                isWhitelisted[tokenId][addresses[i]] = true;
+                emit UserWhitelisted(tokenId, addresses[i], msg.sender);
+            }
+        }
+    }
+    
+    /**
+     * @dev Removes multiple addresses from whitelist for the event (only event creator or owner)
+     * @param addresses Array of addresses to remove from whitelist
+     */
+    function removeFromWhitelist(address[] calldata addresses) external {
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
+        require(tokenExists[tokenId], "Event token does not exist");
+        require(
+            msg.sender == tokenCreator[tokenId] || msg.sender == owner(),
+            "Not authorized to manage whitelist"
+        );
+        
+        for (uint256 i = 0; i < addresses.length; i++) {
+            if (isWhitelisted[tokenId][addresses[i]]) {
+                isWhitelisted[tokenId][addresses[i]] = false;
+                emit UserRemovedFromWhitelist(tokenId, addresses[i], msg.sender);
+            }
+        }
+    }
+    
+    /**
+     * @dev Toggles whitelist status for the event (only event creator or owner)
+     * @param enabled Whether whitelist should be enabled
+     */
+    function setWhitelistEnabled(bool enabled) external {
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
+        require(tokenExists[tokenId], "Event token does not exist");
+        require(
+            msg.sender == tokenCreator[tokenId] || msg.sender == owner(),
+            "Not authorized to manage whitelist"
+        );
+        
+        whitelistEnabled[tokenId] = enabled;
+        emit WhitelistStatusChanged(tokenId, enabled);
+    }
 
     
     /**
@@ -193,9 +279,9 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
     }
     
     /**
-     * @dev Gets basic token information
+     * @dev Gets basic event token information
      */
-    function getTokenInfo(uint256 tokenId) 
+    function getEventTokenInfo() 
         external 
         view 
         returns (
@@ -204,58 +290,76 @@ contract EventNFT is ERC1155, Ownable, Pausable, ReentrancyGuard {
             uint256 maximumSupply,
             string memory description,
             string memory tokenURI,
-            bool exists
+            bool exists,
+            bool whitelistEnabledForToken
         ) 
     {
+        uint256 tokenId = 1; // Always use token ID 1 for the main event token
         return (
             tokenCreator[tokenId],
             tokenSupply[tokenId],
             maxSupply[tokenId],
             tokenDescription[tokenId],
             tokenURIs[tokenId],
-            tokenExists[tokenId]
+            tokenExists[tokenId],
+            whitelistEnabled[tokenId]
         );
     }
     
     /**
-     * @dev Gets all created tokens for this event
+     * @dev Gets the event token ID (always returns [1] if token exists)
      */
-    function getCreatedTokens() external view returns (uint256[] memory) {
-        // This is a simplified version - in production you might want to track this more efficiently
-        uint256 count = 0;
-        uint256 maxTokenId = 1000; // Reasonable limit for gas
-        
-        // Count existing tokens
-        for (uint256 i = 0; i < maxTokenId; i++) {
-            if (tokenExists[i]) {
-                count++;
-            }
+    function getEventTokenId() external view returns (uint256[] memory) {
+        if (tokenExists[1]) {
+            uint256[] memory tokens = new uint256[](1);
+            tokens[0] = 1;
+            return tokens;
+        } else {
+            return new uint256[](0);
         }
-        
-        // Fill array
-        uint256[] memory tokens = new uint256[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < maxTokenId; i++) {
-            if (tokenExists[i]) {
-                tokens[index] = i;
-                index++;
-            }
-        }
-        
-        return tokens;
     }
     
     /**
-     * @dev Checks if user holds this token (will always be 1 if they have it)
+     * @dev Checks if user holds the event token
      */
-    function holdsToken(address user, uint256 tokenId) external view returns (bool) {
-        return hasMinted[tokenId][user];
+    function holdsEventToken(address user) external view returns (bool) {
+        return hasMinted[1][user];
     }
     
     /**
-     * @dev Checks if user has already minted this specific token
+     * @dev Checks if user has already minted the event token
      */
-    function hasUserMinted(address user, uint256 tokenId) external view returns (bool) {
-        return hasMinted[tokenId][user];
+    function hasUserMintedEvent(address user) external view returns (bool) {
+        return hasMinted[1][user];
+    }
+    
+    /**
+     * @dev Checks if user is whitelisted for the event
+     */
+    function isUserWhitelisted(address user) external view returns (bool) {
+        return isWhitelisted[1][user];
+    }
+    
+    /**
+     * @dev Checks if user can mint the event token (considering whitelist)
+     */
+    function canUserMintEvent(address user) external view returns (bool canMint, string memory reason) {
+        if (!tokenExists[1]) {
+            return (false, "Event token does not exist");
+        }
+        
+        if (hasMinted[1][user]) {
+            return (false, "User already minted this event token");
+        }
+        
+        if (whitelistEnabled[1] && !isWhitelisted[1][user]) {
+            return (false, "User not whitelisted for this event");
+        }
+        
+        if (maxSupply[1] > 0 && tokenSupply[1] >= maxSupply[1]) {
+            return (false, "Event token supply exhausted");
+        }
+        
+        return (true, "User can mint event token");
     }
 }

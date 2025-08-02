@@ -37,13 +37,13 @@ function FriendshipCheck({ userAddress }: FriendshipCheckProps) {
           Check Friendship Points
         </CardTitle>
         <CardDescription>
-          Enter a friend's wallet address to see your friendship score
+          Enter a friend&apos;s wallet address to see your friendship score
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="friend-address">Friend's Wallet Address</Label>
+          <Label htmlFor="friend-address">Friend&apos;s Wallet Address</Label>
           <Input
             id="friend-address"
             value={friendAddress}
@@ -55,7 +55,7 @@ function FriendshipCheck({ userAddress }: FriendshipCheckProps) {
         
         {friendAddress && friendAddress === address && (
           <p className="text-sm text-amber-600">
-            That's your own address! Enter a friend's address instead.
+            That&apos;s your own address! Enter a friend&apos;s address instead.
           </p>
         )}
         

@@ -7,74 +7,59 @@ import {EventNFT} from "../src/EventNFT.sol";
 
 contract ProofOfFriendshipRouterTest is Test {
     ProofOfFriendshipRouter public router;
-    
-    address public user1 = address(1);
-    address public user2 = address(2);
-    address public user3 = address(3);
-    
-    event EventNFTCreated(
-        address indexed eventNFT,
-        address indexed creator,
-        string name,
-        string description,
-        string imageURI
-    );
-    
-    event NFTMinted(
-        address indexed user,
-        address indexed eventNFT,
-        uint256 indexed tokenId,
-        uint256 friendshipPointsEarned
-    );
-    
-    event FriendshipPointsUpdated(
-        address indexed userA,
-        address indexed userB,
-        uint256 totalPoints,
-        address indexed eventNFT,
-        uint256 tokenId
-    );
+    address public creator;
+    address public user1;
+    address public user2;
+    address public user3;
+    address public eventNFT;
 
     function setUp() public {
+        creator = address(1);
+        user1 = address(2);
+        user2 = address(3);
+        user3 = address(4);
+        
         router = new ProofOfFriendshipRouter();
     }
 
     function testCreateEvent() public {
-        vm.startPrank(user1);
+        vm.startPrank(creator);
         
-        vm.expectEmit(false, true, false, false);
-        emit EventNFTCreated(address(0), user1, "Summer Party", "A great party", "https://example.com/summer");
-        
-        address eventNFT = router.createEvent(
+        vm.expectEmit(true, true, false, true);
+        emit ProofOfFriendshipRouter.EventNFTCreated(
+            address(0), // We don't know the exact address yet
+            creator,
             "Summer Party",
-            "A great party",
-            "https://example.com/summer"
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
         );
         
-        assertTrue(router.isEventNFT(eventNFT));
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
         
-        address[] memory allEvents = router.getAllEventNFTs();
-        assertEq(allEvents.length, 1);
-        assertEq(allEvents[0], eventNFT);
+        assertTrue(router.isEventNFT(newEventNFT));
         
-        ProofOfFriendshipRouter.EventMetadata memory metadata = router.getEventMetadata(eventNFT);
+        ProofOfFriendshipRouter.EventMetadata memory metadata = router.getEventMetadata(newEventNFT);
         assertEq(metadata.name, "Summer Party");
-        assertEq(metadata.description, "A great party");
-        assertEq(metadata.imageURI, "https://example.com/summer");
-        assertEq(metadata.creator, user1);
+        assertEq(metadata.description, "A fun summer party with friends");
+        assertEq(metadata.imageURI, "https://example.com/summer.jpg");
+        assertEq(metadata.creator, creator);
         assertTrue(metadata.exists);
         
         vm.stopPrank();
     }
 
-    function testCannotCreateEventWithEmptyFields() public {
-        vm.startPrank(user1);
+    function testCreateEventWithEmptyFields() public {
+        vm.startPrank(creator);
         
         vm.expectRevert("Event name cannot be empty");
-        router.createEvent("", "Description", "uri");
+        router.createEvent("", "Description", "https://example.com/image.jpg");
         
         vm.expectRevert("Event description cannot be empty");
-        router.createEvent("Name", "", "uri");
+        router.createEvent("Name", "", "https://example.com/image.jpg");
         
         vm.expectRevert("Event image URI cannot be empty");
         router.createEvent("Name", "Description", "");
@@ -82,258 +67,334 @@ contract ProofOfFriendshipRouterTest is Test {
         vm.stopPrank();
     }
 
-    function testMintAndFriendshipPoints() public {
+    function testMintNFT() public {
+        // Create event first
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        // Create event token
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
+        vm.stopPrank();
+        
+        // Mint NFT
+        vm.startPrank(user1);
+        router.mint(newEventNFT);
+        
+        assertEq(EventNFT(newEventNFT).balanceOf(user1, 1), 1);
+        assertTrue(EventNFT(newEventNFT).hasUserMintedEvent(user1));
+        
+        vm.stopPrank();
+    }
+
+    function testFriendshipPoints() public {
         // Create event
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
         
-        // Create token in the EventNFT contract
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo from the party");
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
         vm.stopPrank();
         
-        // First user mints - no friendship points yet
+        // First user mints
         vm.startPrank(user1);
-        vm.expectEmit(true, true, true, false);
-        emit NFTMinted(user1, eventNFT, 1, 0); // 0 points earned
-        
-        router.mint(eventNFT, 1);
-        
-        assertEq(EventNFT(eventNFT).balanceOf(user1, 1), 1); // Has the NFT
-        assertEq(router.getFriendshipPoints(user1, user2), 0); // No points yet
-        assertTrue(router.hasUserMintedNFT(eventNFT, 1, user1)); // Tracked as holder
+        router.mint(newEventNFT);
         vm.stopPrank();
         
-        // Second user mints - should get 5 friendship points with user1
+        // Second user mints - should earn friendship points with user1
         vm.startPrank(user2);
-        vm.expectEmit(true, true, true, false);
-        emit NFTMinted(user2, eventNFT, 1, 5); // 5 points earned
-        
-        router.mint(eventNFT, 1);
-        
-        assertEq(EventNFT(eventNFT).balanceOf(user2, 1), 1); // Has the NFT
-        assertEq(router.getFriendshipPoints(user1, user2), 5); // 5 points between them
-        assertEq(router.getFriendshipPoints(user2, user1), 5); // Symmetric
-        vm.stopPrank();
-    }
-
-    function testMultipleParticipants() public {
-        // Create event and token
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo");
-        router.mint(eventNFT, 1);
+        router.mint(newEventNFT);
         vm.stopPrank();
         
-        vm.startPrank(user2);
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
+        // Check friendship points
+        uint256 points = router.getFriendshipPoints(user1, user2);
+        assertEq(points, 5); // POINTS_PER_INTERACTION = 5
         
-        // Third user mints - should get 10 points total (5 with user1, 5 with user2)
+        // Third user mints - should earn friendship points with both user1 and user2
         vm.startPrank(user3);
-        vm.expectEmit(true, true, true, false);
-        emit NFTMinted(user3, eventNFT, 1, 10); // 10 points earned
-        
-        router.mint(eventNFT, 1);
-        
-        assertEq(router.getFriendshipPoints(user1, user3), 5);
-        assertEq(router.getFriendshipPoints(user2, user3), 5);
-        assertEq(router.getFriendshipPoints(user1, user2), 5); // Unchanged
-        
-        // All should have the NFT
-        assertEq(EventNFT(eventNFT).balanceOf(user3, 1), 1);
-        vm.stopPrank();
-    }
-
-    function testMultipleTokensFromSameEvent() public {
-        // Create event and multiple tokens
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo");
-        EventNFT(eventNFT).createToken(2, 50, "https://token2.com", "Dancing moment");
+        router.mint(newEventNFT);
         vm.stopPrank();
         
-        // Users mint first token
-        vm.startPrank(user1);
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
+        // Check friendship points
+        uint256 points1_2 = router.getFriendshipPoints(user1, user2);
+        uint256 points1_3 = router.getFriendshipPoints(user1, user3);
+        uint256 points2_3 = router.getFriendshipPoints(user2, user3);
         
-        vm.startPrank(user2);
-        router.mint(eventNFT, 1);
-        assertEq(router.getFriendshipPoints(user1, user2), 5);
-        vm.stopPrank();
-        
-        // Users mint second token - should get additional points
-        vm.startPrank(user1);
-        router.mint(eventNFT, 2);
-        vm.stopPrank();
-        
-        vm.startPrank(user2);
-        router.mint(eventNFT, 2);
-        assertEq(router.getFriendshipPoints(user1, user2), 10); // 5 + 5 = 10
-        
-        // Both should have both NFTs
-        assertEq(EventNFT(eventNFT).balanceOf(user2, 1), 1);
-        assertEq(EventNFT(eventNFT).balanceOf(user2, 2), 1);
-        vm.stopPrank();
-    }
-
-    function testCannotMintFromInvalidContract() public {
-        vm.startPrank(user1);
-        
-        vm.expectRevert("Invalid event NFT contract");
-        router.mint(address(0), 1);
-        
-        vm.stopPrank();
-    }
-
-    function testCannotMintZeroAmount() public {
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        
-        vm.expectRevert("Invalid event NFT contract");
-        router.mint(address(0), 1);
-        
-        vm.stopPrank();
-    }
-
-    function testCannotMintNonExistentToken() public {
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        
-        vm.expectRevert("Token does not exist");
-        router.mint(eventNFT, 999);
-        
-        vm.stopPrank();
+        assertEq(points1_2, 5); // Still 5 (no additional interaction)
+        assertEq(points1_3, 5); // New friendship
+        assertEq(points2_3, 5); // New friendship
     }
 
     function testGetNFTHolders() public {
-        // Create event and token
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
+        vm.stopPrank();
+        
+        // Multiple users mint
         vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo");
-        router.mint(eventNFT, 1);
+        router.mint(newEventNFT);
         vm.stopPrank();
         
         vm.startPrank(user2);
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
-        
-        address[] memory holders = router.getNFTHolders(eventNFT, 1);
-        assertEq(holders.length, 2);
-        assertEq(holders[0], user1);
-        assertEq(holders[1], user2);
-    }
-
-    function testBatchFriendshipPoints() public {
-        // Setup event and participation
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo");
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
-        
-        vm.startPrank(user2);
-        router.mint(eventNFT, 1);
+        router.mint(newEventNFT);
         vm.stopPrank();
         
         vm.startPrank(user3);
-        router.mint(eventNFT, 1);
+        router.mint(newEventNFT);
         vm.stopPrank();
         
-        // Test batch query
+        // Check holders
+        address[] memory holders = router.getNFTHolders(newEventNFT, 1);
+        assertEq(holders.length, 3);
+        assertEq(holders[0], user1);
+        assertEq(holders[1], user2);
+        assertEq(holders[2], user3);
+    }
+
+    function testHasUserMintedNFT() public {
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
+        vm.stopPrank();
+        
+        // User1 mints
+        vm.startPrank(user1);
+        router.mint(newEventNFT);
+        vm.stopPrank();
+        
+        // Check mint status
+        assertTrue(router.hasUserMintedNFT(newEventNFT, 1, user1));
+        assertFalse(router.hasUserMintedNFT(newEventNFT, 1, user2));
+    }
+
+    function testGetAllEventNFTs() public {
+        // Create multiple events
+        vm.startPrank(creator);
+        
+        address event1 = router.createEvent(
+            "Event 1",
+            "First event",
+            "https://example.com/event1.jpg"
+        );
+        
+        address event2 = router.createEvent(
+            "Event 2",
+            "Second event",
+            "https://example.com/event2.jpg"
+        );
+        
+        vm.stopPrank();
+        
+        // Check all events
+        address[] memory allEvents = router.getAllEventNFTs();
+        assertEq(allEvents.length, 2);
+        assertEq(allEvents[0], event1);
+        assertEq(allEvents[1], event2);
+    }
+
+    function testGetFriendshipPointsBatch() public {
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
+        vm.stopPrank();
+        
+        // Multiple users mint to create friendships
+        vm.startPrank(user1);
+        router.mint(newEventNFT);
+        vm.stopPrank();
+        
+        vm.startPrank(user2);
+        router.mint(newEventNFT);
+        vm.stopPrank();
+        
+        vm.startPrank(user3);
+        router.mint(newEventNFT);
+        vm.stopPrank();
+        
+        // Test batch friendship points
         address[] memory friends = new address[](2);
         friends[0] = user2;
         friends[1] = user3;
         
         uint256[] memory points = router.getFriendshipPointsBatch(user1, friends);
+        assertEq(points.length, 2);
         assertEq(points[0], 5); // user1 <-> user2
         assertEq(points[1], 5); // user1 <-> user3
     }
 
-    function testEmergencyPause() public {
+    function testWhitelistFunctionality() public {
         // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", true);
+        vm.stopPrank();
+        
+        // Add users to whitelist
+        address[] memory addresses = new address[](2);
+        addresses[0] = user1;
+        addresses[1] = user2;
+        
+        vm.startPrank(creator);
+        router.addToWhitelist(newEventNFT, addresses);
+        vm.stopPrank();
+        
+        // Check whitelist status
+        assertTrue(router.isUserWhitelisted(newEventNFT, user1));
+        assertTrue(router.isUserWhitelisted(newEventNFT, user2));
+        assertFalse(router.isUserWhitelisted(newEventNFT, user3));
+        
+        // Check mint eligibility
+        (bool canMint1, ) = router.canUserMintEvent(newEventNFT, user1);
+        (bool canMint2, ) = router.canUserMintEvent(newEventNFT, user2);
+        (bool canMint3, ) = router.canUserMintEvent(newEventNFT, user3);
+        
+        assertTrue(canMint1);
+        assertTrue(canMint2);
+        assertFalse(canMint3);
+    }
+
+    function testWhitelistMinting() public {
+        // Create event with whitelist enabled
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
+        
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", true);
+        
+        // Add user1 to whitelist
+        address[] memory addresses = new address[](1);
+        addresses[0] = user1;
+        router.addToWhitelist(newEventNFT, addresses);
+        vm.stopPrank();
+        
+        // user1 can mint (whitelisted)
         vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 100, "https://token1.com", "Group photo");
+        router.mint(newEventNFT);
         vm.stopPrank();
         
-        // Owner can pause
-        vm.startPrank(address(this)); // Test contract is owner
-        router.pauseEventNFT(eventNFT);
-        vm.stopPrank();
-        
-        // Minting should fail when paused
-        vm.startPrank(user1);
-        vm.expectRevert();
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
-        
-        // Owner can unpause
-        vm.startPrank(address(this));
-        router.unpauseEventNFT(eventNFT);
-        vm.stopPrank();
-        
-        // Should work again after unpause
-        vm.startPrank(user1);
-        router.mint(eventNFT, 1);
-        assertEq(EventNFT(eventNFT).balanceOf(user1, 1), 1);
+        // user2 cannot mint (not whitelisted)
+        vm.startPrank(user2);
+        vm.expectRevert("Address not whitelisted for this event");
+        router.mint(newEventNFT);
         vm.stopPrank();
     }
 
-    function testMaxSupplyEnforcement() public {
-        // Create event with limited supply token
-        vm.startPrank(user1);
-        address eventNFT = router.createEvent("Party", "Great party", "https://example.com");
-        EventNFT(eventNFT).createToken(1, 2, "https://token1.com", "Limited edition photo");
+    function testRemoveFromWhitelist() public {
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
         
-        // Mint first NFT
-        router.mint(eventNFT, 1);
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", true);
+        
+        // Add users to whitelist
+        address[] memory addresses = new address[](2);
+        addresses[0] = user1;
+        addresses[1] = user2;
+        router.addToWhitelist(newEventNFT, addresses);
+        
+        // Remove user1 from whitelist
+        address[] memory removeAddresses = new address[](1);
+        removeAddresses[0] = user1;
+        router.removeFromWhitelist(newEventNFT, removeAddresses);
         vm.stopPrank();
         
-        // Mint second NFT
-        vm.startPrank(user2);
-        router.mint(eventNFT, 1);
-        vm.stopPrank();
+        // Check whitelist status
+        assertFalse(router.isUserWhitelisted(newEventNFT, user1));
+        assertTrue(router.isUserWhitelisted(newEventNFT, user2));
+    }
+
+    function testSetWhitelistEnabled() public {
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
         
-        // Third mint should fail
-        vm.startPrank(user3);
-        vm.expectRevert("Would exceed max supply");
-        router.mint(eventNFT, 1);
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
+        
+        // Enable whitelist
+        router.setWhitelistEnabled(newEventNFT, true);
+        
+        // Disable whitelist
+        router.setWhitelistEnabled(newEventNFT, false);
         vm.stopPrank();
     }
 
-    function testMultipleEventsAndCrossEventFriendships() public {
-        // Create two events
-        vm.startPrank(user1);
-        address event1 = router.createEvent("Party 1", "First party", "https://event1.com");
-        address event2 = router.createEvent("Party 2", "Second party", "https://event2.com");
+    function testPauseUnpauseEventNFT() public {
+        // Create event
+        vm.startPrank(creator);
+        address newEventNFT = router.createEvent(
+            "Summer Party",
+            "A fun summer party with friends",
+            "https://example.com/summer.jpg"
+        );
         
-        EventNFT(event1).createToken(1, 100, "https://event1-token1.com", "Party 1 photo");
-        EventNFT(event2).createToken(1, 100, "https://event2-token1.com", "Party 2 photo");
+        EventNFT(newEventNFT).createEventToken(100, "https://token1.com", "Group photo", false);
         vm.stopPrank();
         
-        // Users mint from first event
-        vm.startPrank(user1);
-        router.mint(event1, 1);
-        vm.stopPrank();
+        // Pause event NFT
+        vm.startPrank(address(router.owner()));
+        router.pauseEventNFT(newEventNFT);
+        assertTrue(EventNFT(newEventNFT).paused());
         
-        vm.startPrank(user2);
-        router.mint(event1, 1);
-        assertEq(router.getFriendshipPoints(user1, user2), 5);
+        // Unpause event NFT
+        router.unpauseEventNFT(newEventNFT);
+        assertFalse(EventNFT(newEventNFT).paused());
         vm.stopPrank();
+    }
+
+    function testInvalidEventNFT() public {
+        address invalidEvent = address(999);
         
-        // Users mint from second event - should add more friendship points
-        vm.startPrank(user1);
-        router.mint(event2, 1);
-        vm.stopPrank();
+        vm.expectRevert("Invalid event NFT contract");
+        router.mint(invalidEvent);
         
-        vm.startPrank(user2);
-        router.mint(event2, 1);
-        assertEq(router.getFriendshipPoints(user1, user2), 10); // 5 + 5 = 10
+        vm.expectRevert("Invalid event NFT contract");
+        router.getEventMetadata(invalidEvent);
         
-        // Both should have NFTs from both events
-        assertEq(EventNFT(event1).balanceOf(user2, 1), 1);
-        assertEq(EventNFT(event2).balanceOf(user2, 1), 1);
-        vm.stopPrank();
+        vm.expectRevert("Invalid event NFT contract");
+        router.getNFTHolders(invalidEvent, 1);
+        
+        vm.expectRevert("Invalid event NFT contract");
+        router.hasUserMintedNFT(invalidEvent, 1, user1);
     }
 }

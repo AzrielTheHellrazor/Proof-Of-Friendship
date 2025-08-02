@@ -78,19 +78,19 @@ export function useGetNFTHolders(eventNFTAddress?: string, tokenId?: number) {
   })
 }
 
-// Check if user has minted specific NFT
-export function useHasUserMintedNFT(eventNFTAddress?: string, tokenId?: number, userAddress?: string) {
+// Check if user has minted the event NFT
+export function useHasUserMintedNFT(eventNFTAddress?: string, userAddress?: string) {
   const { address, abi, isSupported } = useProofOfFriendshipRouter()
   
   return useReadContract({
     address,
     abi,
     functionName: 'hasUserMintedNFT',
-    args: eventNFTAddress && tokenId !== undefined && userAddress
-      ? [eventNFTAddress as ContractAddress, BigInt(tokenId), userAddress as ContractAddress]
+    args: eventNFTAddress && userAddress
+      ? [eventNFTAddress as ContractAddress, BigInt(1), userAddress as ContractAddress]
       : undefined,
     query: {
-      enabled: isSupported && !!address && !!eventNFTAddress && tokenId !== undefined && !!userAddress,
+      enabled: isSupported && !!address && !!eventNFTAddress && !!userAddress,
     },
   })
 }
@@ -126,13 +126,13 @@ export function useCreateEvent() {
   }
 }
 
-// Mint NFT and earn friendship points
+// Mint event NFT and earn friendship points
 export function useMintNFT() {
   const { address, abi, isSupported } = useProofOfFriendshipRouter()
   const { data, writeContract, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
 
-  const mint = (eventNFTAddress: string, tokenId: number) => {
+  const mint = (eventNFTAddress: string) => {
     if (!isSupported || !address) {
       console.warn('Contract not available on this network')
       return
@@ -142,7 +142,7 @@ export function useMintNFT() {
       address,
       abi,
       functionName: 'mint',
-      args: [eventNFTAddress as ContractAddress, BigInt(tokenId)],
+      args: [eventNFTAddress as ContractAddress],
     })
   }
 
@@ -164,69 +164,255 @@ export function useEventNFTContract(eventNFTAddress: string) {
   }
 }
 
-// Get token info from EventNFT
-export function useGetTokenInfo(eventNFTAddress?: string, tokenId?: number) {
+// Get event token info from EventNFT
+export function useGetEventTokenInfo(eventNFTAddress?: string) {
   const { address, abi } = useEventNFTContract(eventNFTAddress || '')
   
   return useReadContract({
     address,
     abi,
-    functionName: 'getTokenInfo',
-    args: tokenId !== undefined ? [BigInt(tokenId)] : undefined,
-    query: {
-      enabled: !!eventNFTAddress && tokenId !== undefined,
-    },
-  })
-}
-
-// Get all created tokens from an EventNFT
-export function useGetCreatedTokens(eventNFTAddress?: string) {
-  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
-  
-  return useReadContract({
-    address,
-    abi,
-    functionName: 'getCreatedTokens',
+    functionName: 'getEventTokenInfo',
     query: {
       enabled: !!eventNFTAddress,
     },
   })
 }
 
-// Check if user holds a specific token
-export function useHoldsToken(eventNFTAddress?: string, userAddress?: string, tokenId?: number) {
+// Get event token ID from an EventNFT
+export function useGetEventTokenId(eventNFTAddress?: string) {
   const { address, abi } = useEventNFTContract(eventNFTAddress || '')
   
   return useReadContract({
     address,
     abi,
-    functionName: 'holdsToken',
-    args: userAddress && tokenId !== undefined 
-      ? [userAddress as ContractAddress, BigInt(tokenId)]
-      : undefined,
+    functionName: 'getEventTokenId',
     query: {
-      enabled: !!eventNFTAddress && !!userAddress && tokenId !== undefined,
+      enabled: !!eventNFTAddress,
     },
   })
 }
 
-// Create token in EventNFT (only for event creator)
-export function useCreateToken(eventNFTAddress: string) {
+// Check if user holds the event token
+export function useHoldsEventToken(eventNFTAddress?: string, userAddress?: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'holdsEventToken',
+    args: userAddress ? [userAddress as ContractAddress] : undefined,
+    query: {
+      enabled: !!eventNFTAddress && !!userAddress,
+    },
+  })
+}
+
+// Create event token in EventNFT (only for event creator)
+export function useCreateEventToken(eventNFTAddress: string) {
   const { address, abi } = useEventNFTContract(eventNFTAddress)
   const { data, writeContract, isPending, error } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
 
-  const createToken = (tokenId: number, maxSupply: number, uri: string, description: string) => {
+  const createEventToken = (maxSupply: number, uri: string, description: string, whitelistEnabled: boolean = false) => {
     writeContract({
       address,
       abi,
-      functionName: 'createToken',
-      args: [BigInt(tokenId), BigInt(maxSupply), uri, description],
+      functionName: 'createEventToken',
+      args: [BigInt(maxSupply), uri, description, whitelistEnabled],
     })
   }
 
   return {
-    createToken,
+    createEventToken,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+// ========== WHITELIST MANAGEMENT HOOKS ==========
+
+// Check if user is whitelisted for the event
+export function useIsUserWhitelisted(eventNFTAddress?: string, userAddress?: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'isUserWhitelisted',
+    args: userAddress ? [userAddress as ContractAddress] : undefined,
+    query: {
+      enabled: !!eventNFTAddress && !!userAddress,
+    },
+  })
+}
+
+// Check if user can mint the event token (considering whitelist)
+export function useCanUserMintEvent(eventNFTAddress?: string, userAddress?: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress || '')
+  
+  return useReadContract({
+    address,
+    abi,
+    functionName: 'canUserMintEvent',
+    args: userAddress ? [userAddress as ContractAddress] : undefined,
+    query: {
+      enabled: !!eventNFTAddress && !!userAddress,
+    },
+  })
+}
+
+// Add addresses to whitelist (convenience function through router)
+export function useAddToWhitelist() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const addToWhitelist = (eventNFTAddress: string, addresses: string[]) => {
+    if (!isSupported || !address) {
+      console.warn('Contract not available on this network')
+      return
+    }
+    
+    writeContract({
+      address,
+      abi,
+      functionName: 'addToWhitelist',
+      args: [eventNFTAddress as ContractAddress, addresses as ContractAddress[]],
+    })
+  }
+
+  return {
+    addToWhitelist,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+// Remove addresses from whitelist (convenience function through router)
+export function useRemoveFromWhitelist() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const removeFromWhitelist = (eventNFTAddress: string, addresses: string[]) => {
+    if (!isSupported || !address) {
+      console.warn('Contract not available on this network')
+      return
+    }
+    
+    writeContract({
+      address,
+      abi,
+      functionName: 'removeFromWhitelist',
+      args: [eventNFTAddress as ContractAddress, addresses as ContractAddress[]],
+    })
+  }
+
+  return {
+    removeFromWhitelist,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+// Set whitelist enabled status (convenience function through router)
+export function useSetWhitelistEnabled() {
+  const { address, abi, isSupported } = useProofOfFriendshipRouter()
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const setWhitelistEnabled = (eventNFTAddress: string, enabled: boolean) => {
+    if (!isSupported || !address) {
+      console.warn('Contract not available on this network')
+      return
+    }
+    
+    writeContract({
+      address,
+      abi,
+      functionName: 'setWhitelistEnabled',
+      args: [eventNFTAddress as ContractAddress, enabled],
+    })
+  }
+
+  return {
+    setWhitelistEnabled,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+// Direct EventNFT contract whitelist functions (for event creators)
+export function useEventNFTAddToWhitelist(eventNFTAddress: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress)
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const addToWhitelist = (addresses: string[]) => {
+    writeContract({
+      address,
+      abi,
+      functionName: 'addToWhitelist',
+      args: [addresses as ContractAddress[]],
+    })
+  }
+
+  return {
+    addToWhitelist,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+export function useEventNFTRemoveFromWhitelist(eventNFTAddress: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress)
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const removeFromWhitelist = (addresses: string[]) => {
+    writeContract({
+      address,
+      abi,
+      functionName: 'removeFromWhitelist',
+      args: [addresses as ContractAddress[]],
+    })
+  }
+
+  return {
+    removeFromWhitelist,
+    isPending: isPending || isConfirming,
+    isSuccess,
+    error,
+    hash: data,
+  }
+}
+
+export function useEventNFTSetWhitelistEnabled(eventNFTAddress: string) {
+  const { address, abi } = useEventNFTContract(eventNFTAddress)
+  const { data, writeContract, isPending, error } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: data })
+
+  const setWhitelistEnabled = (enabled: boolean) => {
+    writeContract({
+      address,
+      abi,
+      functionName: 'setWhitelistEnabled',
+      args: [enabled],
+    })
+  }
+
+  return {
+    setWhitelistEnabled,
     isPending: isPending || isConfirming,
     isSuccess,
     error,

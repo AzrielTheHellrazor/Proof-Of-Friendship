@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
     const { 
       metadataUri, 
       recipientAddress, 
-      contractAddress 
+      contractAddress,
+      tokenId = 1
     } = body;
 
     // Validate required fields
@@ -22,6 +23,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields: metadataUri, recipientAddress, contractAddress' },
         { status: 400 }
+      );
+    }
+
+    // TODO: Add actual whitelist validation here
+    // This would involve checking the smart contract for whitelist status
+    // For now, we'll simulate the check
+    const isWhitelistCheckRequired = true; // This would come from contract
+    const isUserWhitelisted = Math.random() > 0.3; // Simulate whitelist check
+    
+    if (isWhitelistCheckRequired && !isUserWhitelisted) {
+      return NextResponse.json(
+        { 
+          error: 'Access denied', 
+          message: 'You are not whitelisted for this token. Contact the event creator to be added to the whitelist.',
+          code: 'NOT_WHITELISTED'
+        },
+        { status: 403 }
       );
     }
 
@@ -50,10 +68,14 @@ export async function POST(request: NextRequest) {
     const simulatedResponse = {
       success: true,
       transactionHash: `0x${Math.random().toString(16).substr(2, 64)}`,
-      tokenId: Math.floor(Math.random() * 10000),
+      tokenId,
       metadataUri,
       recipientAddress,
-      message: 'NFT minting simulated successfully! Enable real minting by implementing the contract interaction above.'
+      whitelistStatus: {
+        isRequired: isWhitelistCheckRequired,
+        isWhitelisted: isUserWhitelisted
+      },
+      message: 'NFT minting simulated successfully! Whitelist validation passed. Enable real minting by implementing the contract interaction above.'
     };
 
     return NextResponse.json(simulatedResponse);
